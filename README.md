@@ -54,11 +54,11 @@ Backlog → Ready → Design → In Progress → Testing → Review → Done
 
 ### `/kanban` Skill
 
-Copy the skill template into your project's Claude config:
+Copy the skill template into your project's `.claude/skills/` directory:
 
 ```bash
-mkdir -p .claude/projects/<project-dir>/skills/kanban
-cp kanban/templates/SKILL.md .claude/projects/<project-dir>/skills/kanban/SKILL.md
+mkdir -p .claude/skills/kanban
+cp kanban/templates/SKILL.md .claude/skills/kanban/SKILL.md
 ```
 
 Then invoke `/kanban` at session start. Claude will read the board, summarize the state, and pick up the highest-priority Ready card.
@@ -121,9 +121,9 @@ git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
 cp kanban/templates/kanban.json.template kanban-board.json
 # Edit kanban-board.json to set your repo name
 
-# 3. Copy the skill template (adjust project path)
-mkdir -p .claude/projects/<project-dir>/skills/kanban
-cp kanban/templates/SKILL.md .claude/projects/<project-dir>/skills/kanban/SKILL.md
+# 3. Copy the skill template
+mkdir -p .claude/skills/kanban
+cp kanban/templates/SKILL.md .claude/skills/kanban/SKILL.md
 
 # 4. Start the server
 node kanban/serve.js
