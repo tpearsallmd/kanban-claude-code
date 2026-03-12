@@ -5,13 +5,13 @@ description: Read the kanban board and bootstrap Claude with the current task st
 
 # Kanban Board Bootstrap
 
-Read `kanban-board.json` and `kanban-claude-code/kanban-spec.md` to understand the current board state and workflow rules.
+Read `kanban-board.json` and `kanban/kanban-spec.md` to understand the current board state and workflow rules.
 
 ## Session Start Protocol
 
 1. **Start the kanban server** if it's not already running:
    - Check if port 5555 is in use: `curl -s http://localhost:5555/kanban-board.json > /dev/null 2>&1`
-   - If not running, start it in the background: `node kanban-claude-code/serve.js` (using Bash with `run_in_background: true`)
+   - If not running, start it in the background: `node kanban/serve.js` (using Bash with `run_in_background: true`)
    - Confirm it's serving before proceeding
 2. Read `kanban-board.json`
 3. Summarize the board state: how many cards per column, what's in progress, what's in review
@@ -63,8 +63,8 @@ Each column transition is a discrete gate. Claude must confirm with the user bef
 - Structured sections (optional, omit if empty): requirements, design, implementationNotes, testPlan, reviewNotes
 - Check `wipLimits` before moving cards — do not exceed without flagging
 - Always pretty-print JSON with 2-space indentation
-- The kanban server runs on port 5555 (`node kanban-claude-code/serve.js`) — changes to the JSON are immediately reflected in the browser
+- The kanban server runs on port 5555 (`node kanban/serve.js`) — changes to the JSON are immediately reflected in the browser
 
 ## Schema Migration
 
-If you pull a submodule update, check `kanban-claude-code/CHANGELOG.md` for schema changes. Follow the "Migration (for AI)" instructions to update `kanban-board.json` to the latest schema version.
+If you pull a submodule update, check `kanban/CHANGELOG.md` for schema changes. Follow the "Migration (for AI)" instructions to update `kanban-board.json` to the latest schema version.
