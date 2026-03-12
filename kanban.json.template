@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "repo": "REPO_NAME",
+  "columns": [
+    "Backlog",
+    "Ready",
+    "Design",
+    "In Progress",
+    "Testing",
+    "Review",
+    "Done"
+  ],
+  "wipLimits": {
+    "Design": 2,
+    "In Progress": 3,
+    "Testing": 3,
+    "Review": 5
+  },
+  "cards": []
+}

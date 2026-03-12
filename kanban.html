@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanban</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Toolbar */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  flex-shrink: 0;
+}
+
+#toolbar button {
+  padding: 6px 14px;
+  border: 1px solid #475569;
+  background: #334155;
+  color: #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+#toolbar button:hover { background: #475569; }
+#toolbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#filter-repo {
+  padding: 6px 10px;
+  border: 1px solid #475569;
+  background: #334155;
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+#filter-repo:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#dir-name {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.spacer { flex: 1; }
+
+/* Board */
+#board {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  overflow-x: auto;
+  flex: 1;
+  align-items: flex-start;
+}
+
+/* Column */
+.column {
+  background: #1e293b;
+  border-radius: 10px;
+  min-width: 280px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 82px);
+  flex-shrink: 0;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #334155;
+  flex-shrink: 0;
+}
+
+.column-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.column-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.column-count {
+  font-size: 12px;
+  background: #334155;
+  color: #94a3b8;
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-weight: 600;
+}
+
+.column-count.over-wip {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.wip-limit {
+  font-size: 10px;
+  color: #475569;
+  font-weight: 400;
+}
+
+.clear-done-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid #475569;
+  background: transparent;
+  color: #64748b;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.clear-done-btn:hover { background: #334155; color: #94a3b8; }
+
+.column-cards {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.column-cards.drag-over {
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 6px;
+}
+
+/* Card */
+.card {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 11px 11px 10px 13px;
+  border-left: 3px solid #6b7280;
+  cursor: grab;
+  position: relative;
+  user-select: none;
+}
+.card:active { cursor: grabbing; }
+.card.priority-high   { border-left-color: #ef4444; }
+.card.priority-medium { border-left-color: #eab308; }
+.card.priority-low    { border-left-color: #6b7280; }
+.card.dragging        { opacity: 0.35; }
+
+.done-column .card { opacity: 0.45; }
+
+.card.blocked {
+  border-left-color: #f97316 !important;
+  background: #1a1207;
+}
+
+.blocked-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #7c2d12;
+  color: #fdba74;
+  margin-right: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.blocked-reason {
+  font-size: 11px;
+  color: #f97316;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 3px;
+  padding-right: 44px;
+  line-height: 1.4;
+}
+
+.card-repo {
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.tag {
+  font-size: 11px;
+  background: #1e3a5f;
+  color: #7dd3fc;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  gap: 4px;
+}
+.card:hover .card-actions { display: flex; }
+
+.card-btn {
+  background: #1e293b;
+  border: none;
+  color: #94a3b8;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.card-btn:hover { background: #334155; color: #e2e8f0; }
+
+.type-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+.type-badge.defect {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.size-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #1e3a5f;
+  color: #7dd3fc;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.empty-col {
+  text-align: center;
+  color: #1e293b;
+  font-size: 28px;
+  padding: 16px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Modal */
+#modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#modal-backdrop.open { display: flex; }
+
+#modal {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 24px;
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+#modal h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #f1f5f9;
+}
+
+.field { margin-bottom: 15px; }
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-family: inherit;
+}
+.field textarea { resize: vertical; min-height: 80px; }
+.field input:focus,
+.field textarea:focus,
+.field select:focus { outline: none; border-color: #6366f1; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  padding: 8px 20px;
+  background: #6366f1;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.btn-primary:hover { background: #4f46e5; }
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-secondary:hover { background: #334155; }
+
+/* Collapsible sections */
+.sections-container { margin-top: 8px; }
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  margin-bottom: 4px;
+  text-align: left;
+}
+.section-toggle:hover { background: #1e293b; color: #e2e8f0; }
+.section-toggle .arrow { transition: transform 0.15s; font-size: 10px; }
+.section-toggle.open .arrow { transform: rotate(90deg); }
+
+.section-toggle .section-indicator {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: none;
+}
+.section-toggle .section-indicator.has-content { display: inline-block; }
+
+.section-body {
+  display: none;
+  padding: 0 0 8px 0;
+}
+.section-body.open { display: block; }
+
+.section-body textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 70px;
+}
+.section-body textarea:focus { outline: none; border-color: #6366f1; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span id="repo-title" style="font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:0.02em"></span>
+  <span class="spacer"></span>
+  <button id="btn-add">+ Add Card</button>
+  <span id="save-status" style="font-size:12px;color:#64748b"></span>
+</div>
+
+<div id="board"></div>
+
+<!-- Card Modal -->
+<div id="modal-backdrop">
+  <div id="modal">
+    <h2 id="modal-title">Add Card</h2>
+    <div class="field">
+      <label>Title *</label>
+      <input type="text" id="f-title" placeholder="Task title">
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="f-desc" placeholder="Overview, context, acceptance criteria..."></textarea>
+    </div>
+    <div class="sections-container">
+      <button type="button" class="section-toggle" data-section="requirements">
+        <span class="arrow">▶</span> Requirements
+        <span class="section-indicator" id="ind-requirements"></span>
+      </button>
+      <div class="section-body" id="sec-requirements">
+        <textarea id="f-requirements" placeholder="Acceptance criteria, constraints, edge cases..."></textarea>
+      </div>
+
+      <button type="button" class="section-toggle" data-section="design">
+        <span class="arrow">▶</span> Design
+        <span class="section-indicator" id="ind-design"></span>
+      </button>
+      <div class="section-body" id="sec-design">
+        <textarea id="f-design" placeholder="Approach, affected files, architecture notes..."></textarea>
+      </div>
+
+      <button type="button" class="section-toggle" data-section="implementationNotes">
+        <span class="arrow">▶</span> Implementation Notes
+        <span class="section-indicator" id="ind-implementationNotes"></span>
+      </button>
+      <div class="section-body" id="sec-implementationNotes">
+        <textarea id="f-implementationNotes" placeholder="What was changed, key decisions..."></textarea>
+      </div>
+
+      <button type="button" class="section-toggle" data-section="testPlan">
+        <span class="arrow">▶</span> Test Plan
+        <span class="section-indicator" id="ind-testPlan"></span>
+      </button>
+      <div class="section-body" id="sec-testPlan">
+        <textarea id="f-testPlan" placeholder="How to test, expected results, test commands..."></textarea>
+      </div>
+
+      <button type="button" class="section-toggle" data-section="reviewNotes">
+        <span class="arrow">▶</span> Review Notes
+        <span class="section-indicator" id="ind-reviewNotes"></span>
+      </button>
+      <div class="section-body" id="sec-reviewNotes">
+        <textarea id="f-reviewNotes" placeholder="Review feedback, docs updated, approval notes..."></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div class="field" style="flex:1">
+        <label>Type</label>
+        <select id="f-type">
+          <option value="enhancement" selected>Enhancement</option>
+          <option value="defect">Defect</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1">
+        <label>Priority</label>
+        <select id="f-priority">
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1">
+        <label>Size</label>
+        <select id="f-size">
+          <option value="XS">XS</option>
+          <option value="S">S</option>
+          <option value="M" selected>M</option>
+          <option value="L">L</option>
+          <option value="XL">XL</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Tags <span style="font-weight:400;text-transform:none;letter-spacing:0">(comma-separated)</span></label>
+      <input type="text" id="f-tags" placeholder="backend, security, ui">
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="f-blocked" style="width:auto;accent-color:#f97316">
+      <label for="f-blocked" style="margin-bottom:0;text-transform:none;letter-spacing:0;font-size:13px;color:#f97316;cursor:pointer">Blocked</label>
+    </div>
+    <div class="field" id="blocked-reason-field" style="display:none">
+      <label>Blocked Reason</label>
+      <input type="text" id="f-blocked-reason" placeholder="Waiting on...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modal-cancel">Cancel</button>
+      <button class="btn-primary" id="modal-save">Save Card</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+let state = null;
+let editingCardId = null;
+let dragCardId = null;
+
+// ─── Startup ──────────────────────────────────────────────────────────────────
+
+async function init() {
+  try {
+    const resp = await fetch('./kanban.json');
+    if (!resp.ok) throw new Error(resp.statusText);
+    state = await resp.json();
+  } catch (e) {
+    document.getElementById('save-status').textContent = '⚠ Could not load kanban.json';
+    return;
+  }
+
+  document.title = state.repo || 'Kanban';
+  document.getElementById('repo-title').textContent = state.repo || '';
+  render();
+}
+
+// ─── Save ─────────────────────────────────────────────────────────────────────
+
+async function saveFile() {
+  if (!state) return;
+  try {
+    const resp = await fetch('./kanban.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state, null, 2)
+    });
+    if (!resp.ok) throw new Error(resp.statusText);
+    setSaveStatus('Saved');
+  } catch (e) {
+    setSaveStatus('⚠ Save failed');
+    console.error('Save failed:', e);
+  }
+}
+
+function setSaveStatus(msg) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; }, 2000);
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+
+function render() {
+  renderBoard();
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  const wipLimits = state.wipLimits || {};
+
+  state.columns.forEach(col => {
+    const colCards = state.cards.filter(c => c.column === col);
+    const isDone = col === 'Done';
+    const hasDoneCards = state.cards.some(c => c.column === 'Done');
+    const wip = wipLimits[col];
+    const overWip = wip && colCards.length > wip;
+
+    const colEl = document.createElement('div');
+    colEl.className = 'column' + (isDone ? ' done-column' : '');
+    colEl.dataset.column = col;
+
+    const wipDisplay = wip
+      ? `<span class="wip-limit">/ ${wip}</span>`
+      : '';
+
+    const headerEl = document.createElement('div');
+    headerEl.className = 'column-header';
+    headerEl.innerHTML = `
+      <span class="column-title">${esc(col)}</span>
+      <div class="column-meta">
+        ${isDone && hasDoneCards ? '<button class="clear-done-btn">Clear Done</button>' : ''}
+        <span class="column-count${overWip ? ' over-wip' : ''}">${colCards.length}</span>${wipDisplay}
+      </div>
+    `;
+
+    if (isDone && hasDoneCards) {
+      headerEl.querySelector('.clear-done-btn').onclick = () => {
+        if (confirm('Remove all Done cards?')) {
+          state.cards = state.cards.filter(c => c.column !== 'Done');
+          saveFile();
+          render();
+        }
+      };
+    }
+
+    const cardsEl = document.createElement('div');
+    cardsEl.className = 'column-cards';
+    cardsEl.dataset.column = col;
+
+    if (colCards.length === 0) {
+      cardsEl.innerHTML = '<div class="empty-col">·</div>';
+    } else {
+      colCards.forEach(card => cardsEl.appendChild(makeCardEl(card)));
+    }
+
+    cardsEl.addEventListener('dragover', e => {
+      e.preventDefault();
+      cardsEl.classList.add('drag-over');
+    });
+    cardsEl.addEventListener('dragleave', e => {
+      if (!cardsEl.contains(e.relatedTarget)) cardsEl.classList.remove('drag-over');
+    });
+    cardsEl.addEventListener('drop', e => {
+      e.preventDefault();
+      cardsEl.classList.remove('drag-over');
+      if (dragCardId) moveCard(dragCardId, col);
+    });
+
+    colEl.appendChild(headerEl);
+    colEl.appendChild(cardsEl);
+    board.appendChild(colEl);
+  });
+}
+
+function makeCardEl(card) {
+  const el = document.createElement('div');
+  el.className = `card priority-${card.priority}${card.blocked ? ' blocked' : ''}`;
+  el.draggable = true;
+  el.dataset.id = card.id;
+
+  const tagsHtml = (card.tags || []).length > 0
+    ? `<div class="card-tags">${card.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>`
+    : '';
+
+  const typeLabel = card.type === 'defect'
+    ? '<span class="type-badge defect">bug</span>'
+    : '';
+
+  const blockedLabel = card.blocked
+    ? '<span class="blocked-badge">blocked</span>'
+    : '';
+
+  const blockedReason = card.blocked && card.blockedReason
+    ? `<div class="blocked-reason">${esc(card.blockedReason)}</div>`
+    : '';
+
+  const sizeLabel = card.size
+    ? `<span class="size-badge">${esc(card.size)}</span>`
+    : '';
+
+  el.innerHTML = `
+    <div class="card-title">${blockedLabel}${typeLabel}${esc(card.title)} ${sizeLabel}</div>
+    ${blockedReason}
+    ${tagsHtml}
+    <div class="card-actions">
+      <button class="card-btn edit-btn" title="Edit">✎</button>
+      <button class="card-btn delete-btn" title="Delete">✕</button>
+    </div>
+  `;
+
+  el.addEventListener('dragstart', e => {
+    dragCardId = card.id;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => el.classList.add('dragging'), 0);
+  });
+  el.addEventListener('dragend', () => {
+    dragCardId = null;
+    el.classList.remove('dragging');
+  });
+
+  el.querySelector('.edit-btn').onclick = e => {
+    e.stopPropagation();
+    openModal(card.id);
+  };
+  el.querySelector('.delete-btn').onclick = e => {
+    e.stopPropagation();
+    if (confirm(`Delete "${card.title}"?`)) {
+      state.cards = state.cards.filter(c => c.id !== card.id);
+      saveFile();
+      render();
+    }
+  };
+
+  return el;
+}
+
+function moveCard(cardId, newColumn) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card || card.column === newColumn) return;
+
+  const wipLimits = state.wipLimits || {};
+  const wip = wipLimits[newColumn];
+  if (wip) {
+    const count = state.cards.filter(c => c.column === newColumn).length;
+    if (count >= wip && !confirm(`WIP limit (${wip}) reached for "${newColumn}". Move anyway?`)) return;
+  }
+
+  card.column = newColumn;
+  card.updated = new Date().toISOString();
+  saveFile();
+  render();
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+document.getElementById('btn-add').onclick = () => openModal(null);
+document.getElementById('modal-cancel').onclick = closeModal;
+document.getElementById('modal-backdrop').onclick = e => {
+  if (e.target === e.currentTarget) closeModal();
+};
+document.getElementById('modal-save').onclick = saveCard;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && e.ctrlKey &&
+      document.getElementById('modal-backdrop').classList.contains('open')) {
+    saveCard();
+  }
+});
+
+document.getElementById('f-blocked').onchange = e => {
+  document.getElementById('blocked-reason-field').style.display = e.target.checked ? '' : 'none';
+};
+
+// Section toggles
+const SECTIONS = ['requirements', 'design', 'implementationNotes', 'testPlan', 'reviewNotes'];
+document.querySelectorAll('.section-toggle').forEach(btn => {
+  btn.onclick = () => {
+    const sec = btn.dataset.section;
+    const body = document.getElementById('sec-' + sec);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    btn.classList.toggle('open');
+    if (!isOpen) {
+      const ta = body.querySelector('textarea');
+      if (ta) setTimeout(() => ta.focus(), 50);
+    }
+  };
+});
+
+function openModal(cardId) {
+  editingCardId = cardId;
+  document.getElementById('modal-title').textContent = cardId ? 'Edit Card' : 'Add Card';
+
+  if (cardId) {
+    const card = state.cards.find(c => c.id === cardId);
+    document.getElementById('f-title').value = card.title || '';
+    document.getElementById('f-desc').value = card.description || '';
+    document.getElementById('f-type').value = card.type || 'enhancement';
+    document.getElementById('f-priority').value = card.priority || 'medium';
+    document.getElementById('f-size').value = card.size || 'M';
+    document.getElementById('f-tags').value = (card.tags || []).join(', ');
+    document.getElementById('f-blocked').checked = !!card.blocked;
+    document.getElementById('f-blocked-reason').value = card.blockedReason || '';
+    document.getElementById('blocked-reason-field').style.display = card.blocked ? '' : 'none';
+    SECTIONS.forEach(s => {
+      document.getElementById('f-' + s).value = card[s] || '';
+      document.getElementById('ind-' + s).classList.toggle('has-content', !!(card[s]));
+      document.getElementById('sec-' + s).classList.remove('open');
+      document.querySelector(`[data-section="${s}"]`).classList.remove('open');
+    });
+  } else {
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-type').value = 'enhancement';
+    document.getElementById('f-priority').value = 'medium';
+    document.getElementById('f-size').value = 'M';
+    document.getElementById('f-tags').value = '';
+    document.getElementById('f-blocked').checked = false;
+    document.getElementById('f-blocked-reason').value = '';
+    document.getElementById('blocked-reason-field').style.display = 'none';
+    SECTIONS.forEach(s => {
+      document.getElementById('f-' + s).value = '';
+      document.getElementById('ind-' + s).classList.remove('has-content');
+      document.getElementById('sec-' + s).classList.remove('open');
+      document.querySelector(`[data-section="${s}"]`).classList.remove('open');
+    });
+  }
+
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('f-title').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  editingCardId = null;
+}
+
+function saveCard() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { document.getElementById('f-title').focus(); return; }
+
+  const tags = document.getElementById('f-tags').value
+    .split(',').map(t => t.trim()).filter(Boolean);
+  const now = new Date().toISOString();
+
+  const blocked = document.getElementById('f-blocked').checked;
+  const blockedReason = document.getElementById('f-blocked-reason').value.trim();
+
+  // Collect section values
+  const sectionValues = {};
+  SECTIONS.forEach(s => {
+    const val = document.getElementById('f-' + s).value.trim();
+    if (val) sectionValues[s] = val;
+  });
+
+  if (editingCardId) {
+    const card = state.cards.find(c => c.id === editingCardId);
+    card.title = title;
+    card.description = document.getElementById('f-desc').value.trim();
+    card.type = document.getElementById('f-type').value;
+    card.priority = document.getElementById('f-priority').value;
+    card.size = document.getElementById('f-size').value;
+    card.blocked = blocked;
+    card.blockedReason = blocked ? blockedReason : '';
+    card.tags = tags;
+    card.updated = now;
+    SECTIONS.forEach(s => {
+      if (sectionValues[s]) card[s] = sectionValues[s];
+      else delete card[s];
+    });
+  } else {
+    const rand = Math.random().toString(36).slice(2, 5);
+    const newCard = {
+      id: `card_${Date.now()}_${rand}`,
+      title,
+      description: document.getElementById('f-desc').value.trim(),
+      type: document.getElementById('f-type').value,
+      priority: document.getElementById('f-priority').value,
+      size: document.getElementById('f-size').value,
+      column: 'Backlog',
+      created: now,
+      updated: now,
+      tags,
+      ...sectionValues
+    };
+    if (blocked) { newCard.blocked = true; newCard.blockedReason = blockedReason; }
+    state.cards.push(newCard);
+  }
+
+  closeModal();
+  saveFile();
+  render();
+}
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+
+function esc(str) {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+
+init();
+</script>
+</body>
+</html>
