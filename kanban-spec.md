@@ -231,12 +231,12 @@ The kanban board is designed to be a standalone Git repository that can be added
 ```
 kanban/                    # ← git submodule
 ├── kanban.html            # UI — shared across repos
-├── kanban.json.template   # Template for new repos (empty board)
 ├── kanban-spec.md         # This spec — shared across repos
 ├── serve.js               # Server — shared across repos
 ├── CHANGELOG.md           # Schema/structural changes for migration
 └── templates/
-    └── SKILL.md           # Template for the /kanban Claude Code skill
+    ├── kanban.json.template   # Empty board template for new repos
+    └── SKILL.md               # Template for the /kanban Claude Code skill
 ```
 
 Each consuming repo's `kanban.json` is **gitignored in the submodule** but **tracked in the parent repo**. This way:
@@ -252,7 +252,7 @@ Each consuming repo's `kanban.json` is **gitignored in the submodule** but **tra
 git submodule add <kanban-repo-url> kanban
 
 # 2. Create your board from the template
-cp kanban/kanban.json.template kanban/kanban.json
+cp kanban/templates/kanban.json.template kanban-board.json
 
 # 3. Copy the skill template (adjust project path)
 mkdir -p .claude/projects/<project-dir>/skills/kanban

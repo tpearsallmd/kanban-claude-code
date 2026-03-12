@@ -13,8 +13,8 @@ Claude Code works best when it knows what to work on, what's been done, and what
 git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
 
 # Create your board from the template
-cp kanban/kanban.json.template kanban/kanban.json
-# Edit kanban.json to set your repo name
+cp kanban/templates/kanban.json.template kanban-board.json
+# Edit kanban-board.json to set your repo name
 
 # Start the server
 node kanban/serve.js
@@ -86,13 +86,13 @@ Cards have optional collapsible sections that get populated as work progresses:
 ```
 kanban/
 ├── kanban.html           # The entire UI — single file, no dependencies
-├── kanban.json.template  # Template for new repos (empty board)
 ├── kanban-spec.md        # Full spec and design document
 ├── serve.js              # Node.js HTTP server (port 5555)
 ├── CHANGELOG.md          # Schema changes and migration instructions
 ├── README.md             # This file
 └── templates/
-    └── SKILL.md          # Template for the /kanban Claude Code skill
+    ├── kanban.json.template  # Empty board template for new repos
+    └── SKILL.md              # Template for the /kanban Claude Code skill
 ```
 
 ## Using as a Git Submodule
@@ -118,7 +118,7 @@ your-repo/
 git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
 
 # 2. Create your board from the template
-cp kanban/kanban.json.template kanban-board.json
+cp kanban/templates/kanban.json.template kanban-board.json
 # Edit kanban-board.json to set your repo name
 
 # 3. Copy the skill template (adjust project path)
@@ -146,7 +146,7 @@ If you don't need submodule sharing, just clone and use directly:
 
 ```bash
 git clone https://github.com/tpearsallmd/kanban-claude-code.git kanban
-cp kanban/kanban.json.template kanban/kanban.json
+cp kanban/templates/kanban.json.template kanban/kanban.json
 node kanban/serve.js
 ```
 
