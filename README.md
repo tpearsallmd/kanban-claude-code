@@ -158,4 +158,4 @@ See [kanban-spec.md](kanban-spec.md) for the full JSON schema, field definitions
 
 ## License
 
-MIT
+CC-BY-NC-4.0
