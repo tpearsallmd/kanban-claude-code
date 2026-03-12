@@ -97,14 +97,37 @@ kanban/
 
 ## Using as a Git Submodule
 
-The board is designed to be shared across repositories. The submodule contains the UI, server, and spec. Each repo tracks its own `kanban.json`.
+The board is designed to be shared across repositories. The submodule contains the UI, server, and spec. Each repo tracks its own board data.
+
+**Key detail:** Git doesn't allow parent repos to track files inside submodules. So the board data file (`kanban-board.json`) lives at the **repo root**, not inside `kanban/`. The server auto-detects this layout.
+
+```
+your-repo/
+├── kanban/                  # ← git submodule (shared code)
+│   ├── kanban.html
+│   ├── serve.js
+│   └── ...
+├── kanban-board.json        # ← your board data (tracked in parent repo)
+└── ...
+```
 
 ### Adding to a New Repo
 
 ```bash
+# 1. Add the submodule
 git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
-cp kanban/kanban.json.template kanban/kanban.json
-git add kanban/kanban.json
+
+# 2. Create your board from the template
+cp kanban/kanban.json.template kanban-board.json
+# Edit kanban-board.json to set your repo name
+
+# 3. Copy the skill template (adjust project path)
+mkdir -p .claude/projects/<project-dir>/skills/kanban
+cp kanban/templates/SKILL.md .claude/projects/<project-dir>/skills/kanban/SKILL.md
+
+# 4. Start the server
+node kanban/serve.js
+# → Data file: /path/to/your-repo/kanban-board.json
 ```
 
 ### Pulling Updates
@@ -116,6 +139,18 @@ git commit -m "Update kanban submodule"
 ```
 
 If the update includes a schema change, check `CHANGELOG.md` -- it includes AI-readable migration instructions that Claude can apply automatically.
+
+### Standalone Usage (no submodule)
+
+If you don't need submodule sharing, just clone and use directly:
+
+```bash
+git clone https://github.com/tpearsallmd/kanban-claude-code.git kanban
+cp kanban/kanban.json.template kanban/kanban.json
+node kanban/serve.js
+```
+
+In standalone mode, `serve.js` finds `kanban.json` in its own directory.
 
 ## Schema
 
