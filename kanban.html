@@ -574,6 +574,21 @@ async function init() {
   document.title = state.repo || 'Kanban';
   document.getElementById('repo-title').textContent = state.repo || '';
   render();
+
+  // Poll for external changes (e.g. Claude editing the JSON) every 3 seconds
+  setInterval(async () => {
+    try {
+      const resp = await fetch('./kanban.json');
+      if (!resp.ok) return;
+      const diskState = await resp.json();
+      const diskJson = JSON.stringify(diskState);
+      const memJson = JSON.stringify(state);
+      if (diskJson !== memJson) {
+        state = diskState;
+        render();
+      }
+    } catch (e) { /* ignore poll errors */ }
+  }, 3000);
 }
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
@@ -581,6 +596,23 @@ async function init() {
 async function saveFile() {
   if (!state) return;
   try {
+    // Merge with on-disk state to preserve fields added by external tools (Claude)
+    const diskResp = await fetch('./kanban.json');
+    if (diskResp.ok) {
+      const diskState = await diskResp.json();
+      const diskById = {};
+      (diskState.cards || []).forEach(c => { diskById[c.id] = c; });
+      state.cards.forEach(card => {
+        const disk = diskById[card.id];
+        if (!disk) return;
+        // Merge disk fields into card — disk fields that the UI doesn't have are preserved,
+        // but UI fields always win (they reflect the user's latest intent)
+        Object.keys(disk).forEach(key => {
+          if (!(key in card)) card[key] = disk[key];
+        });
+      });
+    }
+
     const resp = await fetch('./kanban.json', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
