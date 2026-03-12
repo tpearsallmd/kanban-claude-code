@@ -10,10 +10,14 @@ Read `kanban/kanban.json` and `kanban/kanban-spec.md` to understand the current 
 
 ## Session Start Protocol
 
-1. Read `kanban/kanban.json`
-2. Summarize the board state: how many cards per column, what's in progress, what's in review
-3. Identify the highest priority card in **Ready** (or **In Progress** if resuming work)
-4. Assess the card description — is there enough context to act on?
+1. **Start the kanban server** if it's not already running:
+   - Check if port 5555 is in use: `curl -s http://localhost:5555/kanban-board.json > /dev/null 2>&1`
+   - If not running, start it in the background: `node kanban/serve.js` (using Bash with `run_in_background: true`)
+   - Confirm it's serving before proceeding
+2. Read `kanban/kanban.json`
+3. Summarize the board state: how many cards per column, what's in progress, what's in review
+4. Identify the highest priority card in **Ready** (or **In Progress** if resuming work)
+5. Assess the card description — is there enough context to act on?
    - If yes: move it to **In Progress** (or **Design** if it needs planning first) and begin work
    - If not: update the description with clarifying questions and leave it in **Ready**
    - If the card is too large: recommend breaking it into multiple cards in **Backlog**
