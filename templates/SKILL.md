@@ -23,23 +23,26 @@ Read `kanban-board.json` and `kanban/kanban-spec.md` to understand the current b
 
 ## Lifecycle Gates
 
-Each column transition is a discrete gate. Claude must confirm with the user before crossing each gate, and must satisfy the entry criteria before moving the card.
+Each column transition is a discrete gate. **Gates are not optional — never skip a column, never do work before moving the card.**
 
 ### Gate 1: Ready → In Progress
 **When:** User confirms which card to work on.
-**Actions:**
-- Move card to **In Progress**, update `updated`
-- Tell the user what you're about to implement
+**Actions — in this order:**
+1. Move card to **In Progress**, update `updated` — **do this before starting any work**
+2. Tell the user what you're about to implement
+3. Then begin the work
 
 ### Gate 2: In Progress → Testing
-**When:** Code is written and the implementation is complete.
+**When:** Work is complete (code written, data updated, investigation done).
 **Before moving the card:**
 1. Update `implementationNotes` with what changed and key decisions
-2. Update `testPlan` with test commands and expected results
+2. Update `testPlan` with what was verified and expected results
 3. Check whether relevant docs in `docs/` need updating — update them if so
 4. Move card to **Testing**, update `updated`
 5. Tell the user exactly how to test: what commands to run, what to look for, what edge cases to check
 6. **Wait for the user to confirm results before proceeding**
+
+> **Data-only cards** (no code changes): Testing = verify the change in RDS/production (e.g. `manage_kennels.py show <id>`). Still move through Testing before Review.
 
 ### Gate 3: Testing → Review
 **When:** Claude's own testing passes (do not wait for user confirmation — move immediately after verifying).
@@ -49,7 +52,7 @@ Each column transition is a discrete gate. Claude must confirm with the user bef
 3. Summarize what was built, what was tested, and what the user should review in the diff
 
 ### Gate 4: Review → Done
-**When:** User explicitly approves the work.
+**When:** User explicitly approves in the current conversation turn — e.g. "looks good", "ship it", "close that out", "move to Done". A general instruction to do work does NOT imply approval of results.
 **Before moving the card:**
 1. Move card to **Done**, update `updated`
 2. Note any follow-up cards discovered during this session — add them to **Backlog**
