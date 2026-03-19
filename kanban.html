@@ -166,6 +166,8 @@ body {
 .card.priority-medium { border-left-color: #eab308; }
 .card.priority-low    { border-left-color: #6b7280; }
 .card.dragging        { opacity: 0.35; }
+.card.drop-above      { box-shadow: 0 -2px 0 0 #6366f1; }
+.card.drop-below      { box-shadow: 0 2px 0 0 #6366f1; }
 
 .done-column .card { opacity: 0.45; }
 
@@ -440,6 +442,37 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+/* Context menu */
+#context-menu {
+  display: none;
+  position: fixed;
+  z-index: 200;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 4px 0;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+#context-menu.open { display: block; }
+#context-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  background: none;
+  border: none;
+  color: #e2e8f0;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+#context-menu button:hover { background: #334155; }
+#context-menu .menu-sep {
+  height: 1px;
+  background: #334155;
+  margin: 4px 0;
+}
 </style>
 </head>
 <body>
@@ -552,12 +585,24 @@ body {
   </div>
 </div>
 
+<!-- Context Menu -->
+<div id="context-menu">
+  <button id="ctx-move-top">Move to Top</button>
+  <button id="ctx-move-up">Move Up</button>
+  <button id="ctx-move-down">Move Down</button>
+  <button id="ctx-move-bottom">Move to Bottom</button>
+  <div class="menu-sep"></div>
+  <button id="ctx-edit">Edit</button>
+  <button id="ctx-delete">Delete</button>
+</div>
+
 <script>
 'use strict';
 
 let state = null;
 let editingCardId = null;
 let dragCardId = null;
+let contextCardId = null;
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
@@ -692,14 +737,22 @@ function renderBoard() {
     cardsEl.addEventListener('dragover', e => {
       e.preventDefault();
       cardsEl.classList.add('drag-over');
+      updateDropIndicator(cardsEl, e.clientY);
     });
     cardsEl.addEventListener('dragleave', e => {
-      if (!cardsEl.contains(e.relatedTarget)) cardsEl.classList.remove('drag-over');
+      if (!cardsEl.contains(e.relatedTarget)) {
+        cardsEl.classList.remove('drag-over');
+        clearDropIndicators(cardsEl);
+      }
     });
     cardsEl.addEventListener('drop', e => {
       e.preventDefault();
       cardsEl.classList.remove('drag-over');
-      if (dragCardId) moveCard(dragCardId, col);
+      if (dragCardId) {
+        const dropIndex = getDropIndex(cardsEl, e.clientY);
+        moveCard(dragCardId, col, dropIndex);
+      }
+      clearDropIndicators(cardsEl);
     });
 
     colEl.appendChild(headerEl);
@@ -754,6 +807,12 @@ function makeCardEl(card) {
     el.classList.remove('dragging');
   });
 
+  el.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    showContextMenu(e.clientX, e.clientY, card.id);
+  });
+
   el.querySelector('.edit-btn').onclick = e => {
     e.stopPropagation();
     openModal(card.id);
@@ -770,21 +829,77 @@ function makeCardEl(card) {
   return el;
 }
 
-function moveCard(cardId, newColumn) {
+function moveCard(cardId, newColumn, dropIndex) {
   const card = state.cards.find(c => c.id === cardId);
-  if (!card || card.column === newColumn) return;
+  if (!card) return;
 
-  const wipLimits = state.wipLimits || {};
-  const wip = wipLimits[newColumn];
-  if (wip) {
-    const count = state.cards.filter(c => c.column === newColumn).length;
-    if (count >= wip && !confirm(`WIP limit (${wip}) reached for "${newColumn}". Move anyway?`)) return;
+  const sameColumn = card.column === newColumn;
+
+  if (!sameColumn) {
+    const wipLimits = state.wipLimits || {};
+    const wip = wipLimits[newColumn];
+    if (wip) {
+      const count = state.cards.filter(c => c.column === newColumn).length;
+      if (count >= wip && !confirm(`WIP limit (${wip}) reached for "${newColumn}". Move anyway?`)) return;
+    }
   }
+
+  // Remove card from its current position in the array
+  const oldIndex = state.cards.indexOf(card);
+  state.cards.splice(oldIndex, 1);
 
   card.column = newColumn;
   card.updated = new Date().toISOString();
+
+  // Find the target position in the global array
+  const colCards = state.cards.filter(c => c.column === newColumn);
+  const clampedIndex = Math.min(dropIndex != null ? dropIndex : 0, colCards.length);
+
+  if (clampedIndex >= colCards.length) {
+    // Insert after the last card in this column
+    const lastColCard = colCards[colCards.length - 1];
+    const globalIndex = lastColCard ? state.cards.indexOf(lastColCard) + 1 : state.cards.length;
+    state.cards.splice(globalIndex, 0, card);
+  } else {
+    // Insert before the card at clampedIndex
+    const targetCard = colCards[clampedIndex];
+    const globalIndex = state.cards.indexOf(targetCard);
+    state.cards.splice(globalIndex, 0, card);
+  }
+
   saveFile();
   render();
+}
+
+function getDropIndex(cardsEl, clientY) {
+  const cards = Array.from(cardsEl.querySelectorAll('.card:not(.dragging)'));
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (clientY < midY) return i;
+  }
+  return cards.length;
+}
+
+function updateDropIndicator(cardsEl, clientY) {
+  clearDropIndicators(cardsEl);
+  const cards = Array.from(cardsEl.querySelectorAll('.card:not(.dragging)'));
+  if (cards.length === 0) return;
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (clientY < midY) {
+      cards[i].classList.add('drop-above');
+      return;
+    }
+  }
+  cards[cards.length - 1].classList.add('drop-below');
+}
+
+function clearDropIndicators(cardsEl) {
+  cardsEl.querySelectorAll('.drop-above, .drop-below').forEach(el => {
+    el.classList.remove('drop-above', 'drop-below');
+  });
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -921,13 +1036,120 @@ function saveCard() {
       ...sectionValues
     };
     if (blocked) { newCard.blocked = true; newCard.blockedReason = blockedReason; }
-    state.cards.push(newCard);
+    // Prepend so new cards appear at top of Backlog
+    const firstBacklog = state.cards.findIndex(c => c.column === 'Backlog');
+    if (firstBacklog >= 0) state.cards.splice(firstBacklog, 0, newCard);
+    else state.cards.push(newCard);
   }
 
   closeModal();
   saveFile();
   render();
 }
+
+// ─── Context Menu ─────────────────────────────────────────────────────────────
+
+function showContextMenu(x, y, cardId) {
+  contextCardId = cardId;
+  const menu = document.getElementById('context-menu');
+  menu.classList.add('open');
+  // Position, clamping to viewport
+  const menuW = 170, menuH = 210;
+  menu.style.left = Math.min(x, window.innerWidth - menuW) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - menuH) + 'px';
+}
+
+function hideContextMenu() {
+  document.getElementById('context-menu').classList.remove('open');
+  contextCardId = null;
+}
+
+document.addEventListener('click', hideContextMenu);
+document.addEventListener('contextmenu', e => {
+  // Close menu if right-clicking outside a card
+  if (!e.target.closest('.card')) hideContextMenu();
+});
+
+function reorderCard(cardId, position) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return;
+  const col = card.column;
+
+  // Remove from array
+  const idx = state.cards.indexOf(card);
+  state.cards.splice(idx, 1);
+
+  // Get column cards (after removal)
+  const colCards = state.cards.filter(c => c.column === col);
+
+  let insertBefore;
+  if (position === 'top') {
+    insertBefore = colCards[0];
+  } else if (position === 'bottom') {
+    insertBefore = null; // insert after last
+  } else if (position === 'up') {
+    // Find where card was in column order
+    const oldColIndex = colCards.findIndex(c => {
+      const ci = state.cards.indexOf(c);
+      return ci >= idx;
+    });
+    const targetIndex = Math.max(0, (oldColIndex >= 0 ? oldColIndex : 0) - 1);
+    insertBefore = colCards[targetIndex];
+  } else if (position === 'down') {
+    const oldColIndex = colCards.findIndex(c => {
+      const ci = state.cards.indexOf(c);
+      return ci >= idx;
+    });
+    const targetIndex = oldColIndex >= 0 ? Math.min(oldColIndex + 1, colCards.length) : colCards.length;
+    insertBefore = colCards[targetIndex] || null;
+  }
+
+  if (insertBefore) {
+    const globalIndex = state.cards.indexOf(insertBefore);
+    state.cards.splice(globalIndex, 0, card);
+  } else {
+    // After last card in column
+    const lastColCard = colCards[colCards.length - 1];
+    const globalIndex = lastColCard ? state.cards.indexOf(lastColCard) + 1 : state.cards.length;
+    state.cards.splice(globalIndex, 0, card);
+  }
+
+  card.updated = new Date().toISOString();
+  saveFile();
+  render();
+}
+
+document.getElementById('ctx-move-top').onclick = () => {
+  if (contextCardId) reorderCard(contextCardId, 'top');
+  hideContextMenu();
+};
+document.getElementById('ctx-move-up').onclick = () => {
+  if (contextCardId) reorderCard(contextCardId, 'up');
+  hideContextMenu();
+};
+document.getElementById('ctx-move-down').onclick = () => {
+  if (contextCardId) reorderCard(contextCardId, 'down');
+  hideContextMenu();
+};
+document.getElementById('ctx-move-bottom').onclick = () => {
+  if (contextCardId) reorderCard(contextCardId, 'bottom');
+  hideContextMenu();
+};
+document.getElementById('ctx-edit').onclick = () => {
+  if (contextCardId) openModal(contextCardId);
+  hideContextMenu();
+};
+document.getElementById('ctx-delete').onclick = () => {
+  if (contextCardId) {
+    const card = state.cards.find(c => c.id === contextCardId);
+    if (card && confirm(`Delete "${card.title}"?`)) {
+      state.cards = state.cards.filter(c => c.id !== contextCardId);
+      saveFile();
+      render();
+    }
+  }
+  hideContextMenu();
+};
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
