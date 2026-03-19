@@ -538,6 +538,14 @@ body {
       <div class="section-body" id="sec-reviewNotes">
         <textarea id="f-reviewNotes" placeholder="Review feedback, docs updated, approval notes..."></textarea>
       </div>
+
+      <button type="button" class="section-toggle" data-section="reviewFeedback">
+        <span class="arrow">▶</span> Review Feedback
+        <span class="section-indicator" id="ind-reviewFeedback"></span>
+      </button>
+      <div class="section-body" id="sec-reviewFeedback">
+        <textarea id="f-reviewFeedback" placeholder="Actionable issues from code review..."></textarea>
+      </div>
     </div>
     <div style="display:flex;gap:12px">
       <div class="field" style="flex:1">
@@ -924,7 +932,7 @@ document.getElementById('f-blocked').onchange = e => {
 };
 
 // Section toggles
-const SECTIONS = ['requirements', 'design', 'implementationNotes', 'testPlan', 'reviewNotes'];
+const SECTIONS = ['requirements', 'design', 'implementationNotes', 'testPlan', 'reviewNotes', 'reviewFeedback'];
 document.querySelectorAll('.section-toggle').forEach(btn => {
   btn.onclick = () => {
     const sec = btn.dataset.section;
