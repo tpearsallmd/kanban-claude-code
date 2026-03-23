@@ -81,18 +81,37 @@ Cards have optional collapsible sections that get populated as work progresses:
 | **Test Plan** | Testing | How to test, expected results |
 | **Review Notes** | Review | Feedback, docs updated, approval notes |
 
+## Pipeline Skills (optional)
+
+The `templates/pipeline/` directory contains a full SDLC pipeline that automates build, code review, and testing through dedicated Claude Code skill sessions. Cards flow through the pipeline automatically — the AI that writes the code never reviews or tests its own work.
+
+See [templates/pipeline/README.md](templates/pipeline/README.md) for setup instructions.
+
+```
+/pipeline  -->  /build  -->  /review  -->  /test
+```
+
 ## Files
 
 ```
 kanban/
-├── kanban.html           # The entire UI — single file, no dependencies
-├── kanban-spec.md        # Full spec and design document
-├── serve.js              # Node.js HTTP server (port 5555)
-├── CHANGELOG.md          # Schema changes and migration instructions
-├── README.md             # This file
+├── kanban.html                        # The entire UI — single file, no dependencies
+├── kanban-spec.md                     # Full spec and design document
+├── serve.js                           # Node.js HTTP server (port 5555)
+├── CHANGELOG.md                       # Schema changes and migration instructions
+├── README.md                          # This file
 └── templates/
-    ├── kanban.json.template  # Empty board template for new repos
-    └── SKILL.md              # Template for the /kanban Claude Code skill
+    ├── kanban.json.template           # Empty board template for new repos
+    ├── kanban-pipeline.json.template  # Board template with Code Review column
+    ├── SKILL.md                       # Template for the /kanban Claude Code skill
+    └── pipeline/                      # SDLC pipeline skills
+        ├── README.md                  # Pipeline setup and customization guide
+        ├── SDLC.md                    # Shared rulebook (gates, schema, ownership)
+        ├── pipeline-SKILL.md          # Orchestrator skill
+        ├── build-SKILL.md             # Developer session skill
+        ├── review-SKILL.md            # Code review session skill
+        ├── test-SKILL.md              # Test session skill
+        └── commit-SKILL.md            # Smart commit skill (optional)
 ```
 
 ## Using as a Git Submodule
