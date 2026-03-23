@@ -83,7 +83,7 @@ The templates are generic and project-agnostic. Here's what you'll likely want t
 ### Build skill (`.claude/skills/build/SKILL.md`)
 - **Test commands**: The template says "run your project's test command." Add your specific command (e.g., `npm test`, `pytest`, `go test ./...`).
 - **Test file conventions**: Add where tests live and how they're named in your project.
-- **Smoke checks**: If you have a local dev environment, add a smoke check section before Code Review (see the SI_RDM implementation for an example).
+- **Smoke checks**: If you have a local dev environment, add a smoke check section before Code Review.
 
 ### Test skill (`.claude/skills/test/SKILL.md`)
 - **Dev environment setup**: The template has a generic "start your dev environment" section. Replace with your specific commands (e.g., `docker compose up -d`, `npm run dev`).
