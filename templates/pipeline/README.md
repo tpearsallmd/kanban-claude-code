@@ -1,5 +1,7 @@
 # Pipeline Skills for Kanban Board
 
+Compatibility note: this legacy path is kept for existing Claude Code installs. New installs should prefer `templates/integrations/claude/`.
+
 An SDLC pipeline that turns the kanban board into an automated build-review-test workflow for Claude Code. Cards flow through dedicated role sessions — each with strict separation of concerns — so the same AI that writes the code never reviews or tests its own work.
 
 ## How It Works

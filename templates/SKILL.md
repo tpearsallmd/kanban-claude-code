@@ -5,6 +5,8 @@ description: Read the kanban board and bootstrap Claude with the current task st
 
 # Kanban Board Bootstrap
 
+Compatibility note: this legacy path is kept for existing Claude Code installs. New installs should prefer `templates/integrations/claude/kanban/SKILL.md`.
+
 Read `kanban-board.json` and `kanban/kanban-spec.md` to understand the current board state and workflow rules.
 
 ## Session Start Protocol

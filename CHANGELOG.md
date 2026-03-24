@@ -10,6 +10,7 @@ Schema and structural changes that affect `kanban.json` compatibility. When pull
 - The UI now shows only the 25 most recently completed cards in `Done`
 - Older completed cards remain in the same JSON file and are marked `archived: true`
 - Entering `Done` stamps `completedAt` automatically if it is missing
+- Added integration-specific template folders for both Claude Code and Codex
 
 ### Migration (for AI)
 

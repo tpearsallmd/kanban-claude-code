@@ -677,7 +677,7 @@ async function init() {
   document.getElementById('repo-title').textContent = state.repo || '';
   render();
 
-  // Poll for external changes (e.g. Claude editing the JSON) every 3 seconds
+  // Poll for external changes (e.g. an external agent editing the JSON) every 3 seconds
   setInterval(async () => {
     try {
       const resp = await fetch('./kanban.json');
@@ -703,7 +703,7 @@ async function saveFile() {
   if (!state) return;
   syncDoneCardMetadata();
   try {
-    // Merge with on-disk state to preserve fields added by external tools (Claude)
+    // Merge with on-disk state to preserve fields added by external tools
     const diskResp = await fetch('./kanban.json');
     if (diskResp.ok) {
       const diskState = await diskResp.json();

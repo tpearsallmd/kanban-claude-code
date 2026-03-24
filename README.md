@@ -1,10 +1,10 @@
-# Kanban for Claude Code
+# Kanban for Coding Agents
 
-A local kanban board designed for human-AI collaboration with [Claude Code](https://claude.com/claude-code). Single HTML file, zero dependencies, JSON data store.
+A local kanban board for human-agent collaboration. Single HTML file, zero dependencies, JSON data store.
 
 ## Why
 
-Claude Code works best when it knows what to work on, what's been done, and what's next. This board gives it that context through a simple JSON file it can read and write directly. The human uses the browser UI for planning and prioritization; Claude picks up cards, updates progress, and moves them through the workflow.
+Coding agents work best when they know what to work on, what changed, and what is next. This board gives them that context through a simple JSON file they can read and write directly. The human uses the browser UI for planning and prioritization; the agent picks up cards, updates progress, and moves them through the workflow.
 
 ## Quick Start
 
@@ -44,33 +44,32 @@ Backlog → Ready → Design → In Progress → Testing → Review → Done
 | Column | Owner | Purpose |
 | --- | --- | --- |
 | **Backlog** | Human | All ideas, bugs, enhancements |
-| **Ready** | Human/Claude | Groomed, prioritized, actionable |
-| **Design** | Claude | Plan approach, update design section |
-| **In Progress** | Claude | Actively writing code |
-| **Testing** | Claude | Write/run tests, verify implementation |
-| **Review** | Human | Review Claude's work |
+| **Ready** | Human/Agent | Groomed, prioritized, actionable |
+| **Design** | Agent | Plan approach, update design section |
+| **In Progress** | Agent | Actively writing code |
+| **Testing** | Agent | Write/run tests, verify implementation |
+| **Review** | Human | Review the agent's work |
 | **Done** | -- | Recent completed work; older completed cards stay archived in the same board file |
 
-## Claude Code Integration
+## Integrations
 
-### `/kanban` Skill
+The board core is vendor-neutral. Agent-specific setup lives under `templates/integrations/`.
 
-Copy the skill template into your project's `.claude/skills/` directory:
+### Claude Code
 
-```bash
-mkdir -p .claude/skills/kanban
-cp kanban/templates/SKILL.md .claude/skills/kanban/SKILL.md
-```
+Use [templates/integrations/claude/README.md](templates/integrations/claude/README.md).
 
-Then invoke `/kanban` at session start. Claude will read the board, summarize the state, and pick up the highest-priority Ready card.
+### Codex
 
-### How Claude Uses the Board
+Use [templates/integrations/codex/README.md](templates/integrations/codex/README.md).
+
+### How Agents Use the Board
 
 - **Session start**: reads `kanban.json`, identifies work to do
 - **During work**: updates structured sections (design, implementation notes, etc.)
 - **Session end**: moves card forward, adds discovered tasks to Backlog
 
-### Structured Card Sections
+## Structured Card Sections
 
 Cards have optional collapsible sections that get populated as work progresses:
 
@@ -82,7 +81,7 @@ Cards have optional collapsible sections that get populated as work progresses:
 | **Test Plan** | Testing | How to test, expected results |
 | **Review Notes** | Review | Feedback, docs updated, approval notes |
 
-### Done History
+## Done History
 
 Completed cards stay in the same board JSON for traceability.
 
@@ -91,37 +90,30 @@ Completed cards stay in the same board JSON for traceability.
 - When a card first enters **Done**, the board stamps `completedAt`
 - Existing boards do not need template changes for this feature; the metadata is added automatically as cards move through the board
 
-## Pipeline Skills (optional)
+## Pipeline Skills
 
-The `templates/pipeline/` directory contains a full SDLC pipeline that automates build, code review, and testing through dedicated Claude Code skill sessions. Cards flow through the pipeline automatically — the AI that writes the code never reviews or tests its own work.
+The shared workflow supports dedicated build, code review, and test sessions. Agent-specific pipeline templates live under:
 
-See [templates/pipeline/README.md](templates/pipeline/README.md) for setup instructions.
-
-```
-/pipeline  -->  /build  -->  /review  -->  /test
-```
+- [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
+- [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
 
 ## Files
 
-```
+```text
 kanban/
-├── kanban.html                        # The entire UI — single file, no dependencies
-├── kanban-spec.md                     # Full spec and design document
-├── serve.js                           # Node.js HTTP server (port 5555)
-├── CHANGELOG.md                       # Schema changes and migration instructions
-├── README.md                          # This file
+├── kanban.html                          # The entire UI — single file, no dependencies
+├── kanban-spec.md                       # Full spec and design document
+├── serve.js                             # Node.js HTTP server (port 5555)
+├── CHANGELOG.md                         # Schema changes and migration instructions
+├── README.md                            # This file
 └── templates/
-    ├── kanban.json.template           # Empty board template for new repos
-    ├── kanban-pipeline.json.template  # Board template with Code Review column
-    ├── SKILL.md                       # Template for the /kanban Claude Code skill
-    └── pipeline/                      # SDLC pipeline skills
-        ├── README.md                  # Pipeline setup and customization guide
-        ├── SDLC.md                    # Shared rulebook (gates, schema, ownership)
-        ├── pipeline-SKILL.md          # Orchestrator skill
-        ├── build-SKILL.md             # Developer session skill
-        ├── review-SKILL.md            # Code review session skill
-        ├── test-SKILL.md              # Test session skill
-        └── commit-SKILL.md            # Smart commit skill (optional)
+    ├── kanban.json.template             # Empty board template for new repos
+    ├── kanban-pipeline.json.template    # Board template with Code Review column
+    ├── SKILL.md                         # Legacy Claude bootstrap template (compatibility path)
+    ├── pipeline/                        # Legacy Claude pipeline templates (compatibility path)
+    └── integrations/
+        ├── claude/                      # Claude Code setup
+        └── codex/                       # Codex setup
 ```
 
 ## Using as a Git Submodule
@@ -130,7 +122,7 @@ The board is designed to be shared across repositories. The submodule contains t
 
 **Key detail:** Git doesn't allow parent repos to track files inside submodules. So the board data file (`kanban-board.json`) lives at the **repo root**, not inside `kanban/`. The server auto-detects this layout.
 
-```
+```text
 your-repo/
 ├── kanban/                  # ← git submodule (shared code)
 │   ├── kanban.html
@@ -150,9 +142,9 @@ git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
 cp kanban/templates/kanban.json.template kanban-board.json
 # Edit kanban-board.json to set your repo name
 
-# 3. Copy the skill template
-mkdir -p .claude/skills/kanban
-cp kanban/templates/SKILL.md .claude/skills/kanban/SKILL.md
+# 3. Install the integration that matches your agent
+# Claude Code: see templates/integrations/claude/README.md
+# Codex: see templates/integrations/codex/README.md
 
 # 4. Start the server
 node kanban/serve.js
@@ -167,11 +159,11 @@ git add kanban
 git commit -m "Update kanban submodule"
 ```
 
-If the update includes a schema change, check `CHANGELOG.md` -- it includes AI-readable migration instructions that Claude can apply automatically.
+If the update includes a schema change, check `CHANGELOG.md` for the migration instructions.
 
-### Standalone Usage (no submodule)
+### Standalone Usage
 
-If you don't need submodule sharing, just clone and use directly:
+If you do not need submodule sharing:
 
 ```bash
 git clone https://github.com/tpearsallmd/kanban-claude-code.git kanban
@@ -184,6 +176,11 @@ In standalone mode, `serve.js` finds `kanban.json` in its own directory.
 ## Schema
 
 See [kanban-spec.md](kanban-spec.md) for the full JSON schema, field definitions, column entry policies, and WIP limit configuration.
+
+## Compatibility Notes
+
+- The root `templates/SKILL.md` and `templates/pipeline/` files remain as compatibility aliases for existing Claude setups.
+- New installs should prefer `templates/integrations/claude/` or `templates/integrations/codex/`.
 
 ## License
 
