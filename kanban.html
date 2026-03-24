@@ -611,6 +611,54 @@ let state = null;
 let editingCardId = null;
 let dragCardId = null;
 let contextCardId = null;
+const DONE_VISIBLE_LIMIT = 25;
+
+function getCardTimestamp(card, ...fields) {
+  for (const field of fields) {
+    const value = card[field];
+    const ts = value ? Date.parse(value) : NaN;
+    if (!Number.isNaN(ts)) return ts;
+  }
+  return 0;
+}
+
+function sortDoneCards(cards) {
+  return cards.slice().sort((a, b) =>
+    getCardTimestamp(b, 'completedAt', 'updated', 'created') -
+    getCardTimestamp(a, 'completedAt', 'updated', 'created')
+  );
+}
+
+function syncDoneCardMetadata() {
+  if (!state || !Array.isArray(state.cards)) return;
+
+  state.cards.forEach(card => {
+    if (card.column === 'Done') {
+      if (!card.completedAt) card.completedAt = card.updated || card.created || new Date().toISOString();
+    } else if (card.archived) {
+      delete card.archived;
+    }
+  });
+
+  const doneCards = sortDoneCards(state.cards.filter(card => card.column === 'Done'));
+  doneCards.forEach((card, index) => {
+    if (index < DONE_VISIBLE_LIMIT) delete card.archived;
+    else card.archived = true;
+  });
+}
+
+function getVisibleColumnCards(column) {
+  if (!state) return [];
+  if (column !== 'Done') return state.cards.filter(card => card.column === column);
+  return sortDoneCards(state.cards.filter(card => card.column === 'Done' && !card.archived));
+}
+
+function getDoneStats() {
+  const doneCards = state ? state.cards.filter(card => card.column === 'Done') : [];
+  const visible = doneCards.filter(card => !card.archived).length;
+  const archived = doneCards.filter(card => card.archived).length;
+  return { total: doneCards.length, visible, archived };
+}
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
@@ -619,6 +667,7 @@ async function init() {
     const resp = await fetch('./kanban.json');
     if (!resp.ok) throw new Error(resp.statusText);
     state = await resp.json();
+    syncDoneCardMetadata();
   } catch (e) {
     document.getElementById('save-status').textContent = '⚠ Could not load kanban.json';
     return;
@@ -633,12 +682,16 @@ async function init() {
     try {
       const resp = await fetch('./kanban.json');
       if (!resp.ok) return;
-      const diskState = await resp.json();
-      const diskJson = JSON.stringify(diskState);
       const memJson = JSON.stringify(state);
+      const diskState = await resp.json();
+      const prevState = state;
+      state = diskState;
+      syncDoneCardMetadata();
+      const diskJson = JSON.stringify(state);
       if (diskJson !== memJson) {
-        state = diskState;
         render();
+      } else {
+        state = prevState;
       }
     } catch (e) { /* ignore poll errors */ }
   }, 3000);
@@ -648,6 +701,7 @@ async function init() {
 
 async function saveFile() {
   if (!state) return;
+  syncDoneCardMetadata();
   try {
     // Merge with on-disk state to preserve fields added by external tools (Claude)
     const diskResp = await fetch('./kanban.json');
@@ -665,6 +719,7 @@ async function saveFile() {
         });
       });
     }
+    syncDoneCardMetadata();
 
     const resp = await fetch('./kanban.json', {
       method: 'PUT',
@@ -696,11 +751,12 @@ function renderBoard() {
   board.innerHTML = '';
 
   const wipLimits = state.wipLimits || {};
+  const doneStats = getDoneStats();
 
   state.columns.forEach(col => {
-    const colCards = state.cards.filter(c => c.column === col);
+    const colCards = getVisibleColumnCards(col);
     const isDone = col === 'Done';
-    const hasDoneCards = state.cards.some(c => c.column === 'Done');
+    const hasDoneCards = doneStats.total > 0;
     const wip = wipLimits[col];
     const overWip = wip && colCards.length > wip;
 
@@ -717,20 +773,10 @@ function renderBoard() {
     headerEl.innerHTML = `
       <span class="column-title">${esc(col)}</span>
       <div class="column-meta">
-        ${isDone && hasDoneCards ? '<button class="clear-done-btn">Clear Done</button>' : ''}
-        <span class="column-count${overWip ? ' over-wip' : ''}">${colCards.length}</span>${wipDisplay}
+        ${isDone && doneStats.archived > 0 ? `<span class="clear-done-btn">${doneStats.archived} archived</span>` : ''}
+        <span class="column-count${overWip ? ' over-wip' : ''}">${isDone ? doneStats.visible : colCards.length}</span>${isDone ? `<span class="wip-limit">of ${doneStats.total}</span>` : wipDisplay}
       </div>
     `;
-
-    if (isDone && hasDoneCards) {
-      headerEl.querySelector('.clear-done-btn').onclick = () => {
-        if (confirm('Remove all Done cards?')) {
-          state.cards = state.cards.filter(c => c.column !== 'Done');
-          saveFile();
-          render();
-        }
-      };
-    }
 
     const cardsEl = document.createElement('div');
     cardsEl.className = 'column-cards';
@@ -842,6 +888,8 @@ function moveCard(cardId, newColumn, dropIndex) {
   if (!card) return;
 
   const sameColumn = card.column === newColumn;
+  const movingIntoDone = card.column !== 'Done' && newColumn === 'Done';
+  const movingOutOfDone = card.column === 'Done' && newColumn !== 'Done';
 
   if (!sameColumn) {
     const wipLimits = state.wipLimits || {};
@@ -858,9 +906,14 @@ function moveCard(cardId, newColumn, dropIndex) {
 
   card.column = newColumn;
   card.updated = new Date().toISOString();
+  if (movingIntoDone) {
+    card.completedAt = card.updated;
+    delete card.archived;
+  }
+  if (movingOutOfDone) delete card.archived;
 
   // Find the target position in the global array
-  const colCards = state.cards.filter(c => c.column === newColumn);
+  const colCards = getVisibleColumnCards(newColumn);
   const clampedIndex = Math.min(dropIndex != null ? dropIndex : 0, colCards.length);
 
   if (clampedIndex >= colCards.length) {
@@ -1088,7 +1141,7 @@ function reorderCard(cardId, position) {
   state.cards.splice(idx, 1);
 
   // Get column cards (after removal)
-  const colCards = state.cards.filter(c => c.column === col);
+  const colCards = getVisibleColumnCards(col);
 
   let insertBefore;
   if (position === 'top') {
@@ -1123,6 +1176,7 @@ function reorderCard(cardId, position) {
   }
 
   card.updated = new Date().toISOString();
+  syncDoneCardMetadata();
   saveFile();
   render();
 }

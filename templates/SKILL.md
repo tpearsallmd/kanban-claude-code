@@ -54,7 +54,7 @@ Each column transition is a discrete gate. **Gates are not optional — never sk
 ### Gate 4: Review → Done
 **When:** User explicitly approves in the current conversation turn — e.g. "looks good", "ship it", "close that out", "move to Done". A general instruction to do work does NOT imply approval of results.
 **Before moving the card:**
-1. Move card to **Done**, update `updated`
+1. Move card to **Done**, update `updated`, and set `completedAt` if it is missing
 2. Note any follow-up cards discovered during this session — add them to **Backlog**
 
 ## Board Rules
@@ -62,11 +62,12 @@ Each column transition is a discrete gate. **Gates are not optional — never sk
 - To move a card: update `column` and `updated` fields only
 - To add a card: append to `cards` array with id format `card_{timestamp}_{random3}`
 - Valid columns: Backlog, Ready, Design, In Progress, Testing, Review, Done
-- Card fields: id, title, description, type (enhancement/defect), priority (high/medium/low), size (XS/S/M/L/XL), column, created, updated, tags, blocked, blockedReason
+- Card fields: id, title, description, type (enhancement/defect), priority (high/medium/low), size (XS/S/M/L/XL), column, created, updated, completedAt, archived, tags, blocked, blockedReason
 - Structured sections (optional, omit if empty): requirements, design, implementationNotes, testPlan, reviewNotes
 - Check `wipLimits` before moving cards — do not exceed without flagging
 - Always pretty-print JSON with 2-space indentation
 - The kanban server runs on port 5555 (`node kanban/serve.js`) — changes to the JSON are immediately reflected in the browser
+- The UI shows only the 25 most recently completed `Done` cards; older completed cards remain in the same JSON file with `archived: true`
 
 ## Schema Migration
 

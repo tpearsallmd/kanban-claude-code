@@ -78,6 +78,8 @@ Before moving a card from **Ready** to **Design** or **In Progress**, Claude mus
       "column": "Ready",
       "created": "2026-03-12T10:00:00Z",
       "updated": "2026-03-12T11:00:00Z",
+      "completedAt": "2026-03-12T15:30:00Z",
+      "archived": false,
       "size": "M",
       "blocked": false,
       "blockedReason": "",
@@ -103,6 +105,8 @@ Before moving a card from **Ready** to **Design** or **In Progress**, Claude mus
 - **blockedReason** — string explaining what the card is blocked on (only when blocked is true)
 - **column** — must match one of the values in the top-level `columns` array
 - **created / updated** — ISO 8601 timestamps
+- **completedAt** — optional ISO 8601 timestamp set when a card enters `Done`; used to determine the most recent completed cards
+- **archived** — optional boolean used for older `Done` cards that remain in the same JSON file but are hidden from the active board
 - **tags** — optional array of strings
 - **requirements** — optional string; acceptance criteria, constraints, edge cases (populated during Ready/Design)
 - **design** — optional string; approach, affected files, architecture notes (populated during Design)
@@ -119,7 +123,7 @@ The `wipLimits` object sets maximum card counts per column. The UI warns when a 
 
 ### Rules for Claude Code
 - To move a card: update `column` and `updated` fields only
-- To complete a card: set `column` to `"Done"` and update `updated`
+- To complete a card: set `column` to `"Done"`, update `updated`, and set `completedAt` if it is not already present
 - To add a card: append to `cards` array with a new unique `id`
 - Before picking up a card: validate the description is sufficient (see Readiness Gate above)
 - Before moving a card: check `wipLimits` — do not exceed the limit without flagging it
@@ -127,6 +131,7 @@ The `wipLimits` object sets maximum card counts per column. The UI warns when a 
 - To unblock a card: set `blocked` to `false` and clear `blockedReason`
 - If a card is too large: add breakdown cards to Backlog, note the split in the original card's description
 - Update structured sections as work progresses: `requirements` and `design` early, `implementationNotes` during coding, `testPlan` during testing, `reviewNotes` during review
+- Keep completed history in the same file; the UI automatically archives older `Done` cards after the 25 most recent by setting `archived: true`
 - Only include section fields in JSON when they have content — omit empty sections to keep JSON clean
 - Before moving a card to Testing: verify that relevant documentation in `docs/` has been updated
 - Never modify the `columns` or `repo` fields
@@ -162,7 +167,7 @@ Each card shows:
 - **Edit card** — same modal pre-populated, triggered by edit icon
 - **Delete card** — confirmation prompt, then removes from data
 - **Auto-save** — saves to file automatically after every drag, add, edit, or delete
-- **Done column** — cards in Done are visually dimmed; a "Clear Done" button appears in that column header
+- **Done column** — cards in Done are visually dimmed; the board shows the 25 most recently completed cards and keeps older completed cards archived in the same JSON file
 
 ### Visual Design
 - Clean, minimal, dark mode aesthetic

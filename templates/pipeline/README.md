@@ -119,6 +119,7 @@ The templates are generic and project-agnostic. Here's what you'll likely want t
 3. Run `/pipeline` or `/build` to start processing
 4. Cards flow: Ready -> In Progress -> Code Review -> Testing -> Review
 5. Human approves in **Review** -> moves to **Done**
+6. The board keeps all completed cards in the same JSON file, while the UI shows only the 25 most recent cards in **Done**
 
 ## Architecture
 
@@ -152,6 +153,8 @@ Review
   v
 Done
 ```
+
+Older completed cards remain in the board file with `archived: true`, so history stays in one place without crowding the active view.
 
 ### Failure loops
 

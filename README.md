@@ -32,6 +32,7 @@ node kanban/serve.js
 - Collapsible structured sections: Requirements, Design, Implementation Notes, Test Plan, Review Notes
 - Dark mode UI
 - Auto-save on every action
+- Recent-completion `Done` view with older completed cards archived in the same JSON file
 - Zero dependencies, zero build step
 
 ## Workflow
@@ -48,7 +49,7 @@ Backlog → Ready → Design → In Progress → Testing → Review → Done
 | **In Progress** | Claude | Actively writing code |
 | **Testing** | Claude | Write/run tests, verify implementation |
 | **Review** | Human | Review Claude's work |
-| **Done** | -- | Merged/complete |
+| **Done** | -- | Recent completed work; older completed cards stay archived in the same board file |
 
 ## Claude Code Integration
 
@@ -80,6 +81,15 @@ Cards have optional collapsible sections that get populated as work progresses:
 | **Implementation Notes** | In Progress | What changed, key decisions |
 | **Test Plan** | Testing | How to test, expected results |
 | **Review Notes** | Review | Feedback, docs updated, approval notes |
+
+### Done History
+
+Completed cards stay in the same board JSON for traceability.
+
+- The UI shows the 25 most recently completed cards in **Done**
+- Older completed cards are marked `archived: true` and hidden from the active board
+- When a card first enters **Done**, the board stamps `completedAt`
+- Existing boards do not need template changes for this feature; the metadata is added automatically as cards move through the board
 
 ## Pipeline Skills (optional)
 

@@ -130,7 +130,7 @@ Required before moving:
 **Trigger:** User says "looks good", "ship it", "close it out", "move to Done", or equivalent
 
 Actions:
-1. Move card to **Done**, update `updated`
+1. Move card to **Done**, update `updated`, and set `completedAt` if it is missing
 2. Add any discovered follow-up work as new cards in **Backlog**
 
 A general instruction to do work does NOT imply approval. Explicit sign-off only.
@@ -151,6 +151,8 @@ A general instruction to do work does NOT imply approval. Explicit sign-off only
 | column | See Columns above |
 | created | ISO date |
 | updated | ISO date — update on every write |
+| completedAt | ISO date — set when the card first enters `Done` |
+| archived | Boolean — optional flag for older `Done` cards kept in the same file |
 | tags | Array of strings |
 | blocked | Boolean |
 | blockedReason | String (required when blocked: true) |
@@ -186,6 +188,7 @@ A general instruction to do work does NOT imply approval. Explicit sign-off only
 - Blocked cards: never claim. Report to user and skip.
 - Always pretty-print JSON with 2-space indentation
 - Kanban server: port 5555, `node kanban/serve.js` — changes reflect immediately in the browser
+- The UI shows the 25 most recently completed cards in `Done`; older completed cards remain in the same JSON file with `archived: true`
 
 ---
 
