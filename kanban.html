@@ -1000,6 +1000,27 @@ document.querySelectorAll('.section-toggle').forEach(btn => {
   };
 });
 
+function formatSectionValue(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value, null, 2);
+}
+
+function parseSectionValue(rawValue) {
+  const value = rawValue.trim();
+  if (!value) return undefined;
+
+  if (value.startsWith('{') || value.startsWith('[')) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
+}
+
 function openModal(cardId) {
   editingCardId = cardId;
   document.getElementById('modal-title').textContent = cardId ? 'Edit Card' : 'Add Card';
@@ -1016,7 +1037,7 @@ function openModal(cardId) {
     document.getElementById('f-blocked-reason').value = card.blockedReason || '';
     document.getElementById('blocked-reason-field').style.display = card.blocked ? '' : 'none';
     SECTIONS.forEach(s => {
-      document.getElementById('f-' + s).value = card[s] || '';
+      document.getElementById('f-' + s).value = formatSectionValue(card[s]);
       document.getElementById('ind-' + s).classList.toggle('has-content', !!(card[s]));
       document.getElementById('sec-' + s).classList.remove('open');
       document.querySelector(`[data-section="${s}"]`).classList.remove('open');
@@ -1062,8 +1083,8 @@ function saveCard() {
   // Collect section values
   const sectionValues = {};
   SECTIONS.forEach(s => {
-    const val = document.getElementById('f-' + s).value.trim();
-    if (val) sectionValues[s] = val;
+    const val = parseSectionValue(document.getElementById('f-' + s).value);
+    if (val !== undefined) sectionValues[s] = val;
   });
 
   if (editingCardId) {
