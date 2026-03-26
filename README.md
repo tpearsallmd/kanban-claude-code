@@ -37,15 +37,15 @@ From your home directory, install skills for Claude and Codex:
 # Clone the repo
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
 
-# Claude — extract integration files to skills directory
-mkdir -p ~/.claude/skills
-mv /tmp/kanban-setup/skills/integrations/* ~/.claude/skills/kanban
+# Claude — extract Claude-specific integration files
+mkdir -p ~/.claude/skills/kanban
+mv /tmp/kanban-setup/skills/integrations/claude/* ~/.claude/skills/kanban
 rm -rf /tmp/kanban-setup
 
-# Codex — same process
+# Codex — extract Codex-specific integration files
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
-mkdir -p ~/.codex/skills
-mv /tmp/kanban-setup/skills/integrations/* ~/.codex/skills/kanban
+mkdir -p ~/.codex/skills/kanban
+mv /tmp/kanban-setup/skills/integrations/codex/* ~/.codex/skills/kanban
 rm -rf /tmp/kanban-setup
 
 # Set kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
