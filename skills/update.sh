@@ -21,8 +21,8 @@ update_agent() {
 
   # Update each skill
   for skill in kanban build review test pipeline commit; do
-    mkdir -p "$skills_dir/$skill"
     rm -rf "$skills_dir/$skill"
+    mkdir -p "$skills_dir/$skill"
     mv /tmp/kanban-setup/skills/integrations/$agent/$skill/* "$skills_dir/$skill/"
   done
 
