@@ -53,12 +53,33 @@ http.createServer((req, res) => {
     return;
   }
 
-  // GET /kanban.json — read from data file
-  if (req.method === 'GET' && req.url === '/kanban.json') {
+  // GET /kanban.json — read from data file, optionally filtered by column
+  if (req.method === 'GET' && req.url.startsWith('/kanban.json')) {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const column = url.searchParams.get('column');
+
     fs.readFile(DATA_FILE, (err, data) => {
       if (err) { res.writeHead(404); res.end('Not found'); return; }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(data);
+
+      try {
+        const board = JSON.parse(data);
+
+        // If column filter requested, return only cards in that column
+        if (column) {
+          const filtered = {
+            ...board,
+            cards: board.cards.filter(card => card.column === column)
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(filtered));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(data);
+        }
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
     });
     return;
   }

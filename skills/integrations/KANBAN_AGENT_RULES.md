@@ -12,8 +12,13 @@ Set `KANBAN_HOST` environment variable (e.g., `export KANBAN_HOST=homelab-01:555
 # Verify service is running
 curl -sf http://${KANBAN_HOST:-localhost:5555}/health
 
-# Read the board
+# Read the entire board
 curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
+
+# Read cards from a specific column (more efficient for role sessions)
+curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Ready
+curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Code%20Review
+curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Testing
 
 # Update the board (read, modify, write back with 2-space indent)
 curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
@@ -26,15 +31,16 @@ curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
 ## Workflow & Columns
 
 ```
-Backlog → Ready → In Progress → Testing → Review → Done
+Backlog → Ready → In Progress → Code Review → Testing → Review → Done
 ```
 
 | Column | Entry Criteria |
 |--------|---|
 | **Ready** | Description has acceptance criteria, relevant file paths, and edge cases. Card `requirements` section populated. |
 | **In Progress** | Design is complete (or card is simple enough to skip). Only move here when actively coding. |
-| **Testing** | Code is written and committed. `implementationNotes` updated with what changed. `testPlan` updated with how to test. Relevant docs updated. |
-| **Review** | Tests pass. Docs updated. Ready for human approval. |
+| **Code Review** | Code is written and committed. `implementationNotes` updated with what changed. Ready for automated review (linting, security, unit tests). |
+| **Testing** | Code review passed. `testPlan` updated with how to test. Relevant docs updated. Ready for manual verification. |
+| **Review** | Tests pass. Ready for human approval. |
 | **Done** | Human approved. Code merged or confirmed working. |
 
 ---

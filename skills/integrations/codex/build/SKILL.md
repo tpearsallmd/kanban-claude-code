@@ -11,7 +11,8 @@ Read [../kanban/SDLC.md](../kanban/SDLC.md) before proceeding. It defines the ga
 
 Follow the Session Startup steps in SDLC.md, then:
 
-1. Filter `kanban-board.json` to cards in the `Ready` column.
+1. Query the Ready column only:
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Ready`
 2. Skip any card where `blocked: true`. Report it and continue.
 3. Sort cards in this order:
    - `returned-from-test` tagged cards first

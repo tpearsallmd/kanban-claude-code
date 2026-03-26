@@ -22,7 +22,8 @@ Read `.claude/skills/kanban/SDLC.md` before proceeding — it defines the gates,
 
 Follow the Session Startup steps in SDLC.md, then:
 
-1. Filter `kanban-board.json` to cards in the **Code Review** column
+1. Query the Code Review column only:
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Code%20Review`
 2. If the column is empty — report "Code Review queue is empty" and stop
 3. Display the queue: priority, id, title for each card
 4. Begin processing immediately — no per-card confirmation needed. Invocation is the confirmation.

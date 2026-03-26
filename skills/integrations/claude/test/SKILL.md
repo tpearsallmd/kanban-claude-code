@@ -22,11 +22,11 @@ Read `.claude/skills/kanban/SDLC.md` before proceeding — it defines the gates,
 
 Follow the Session Startup steps in SDLC.md, then:
 
-1. Filter `kanban-board.json` to cards in the **Testing** column
-2. Skip any card where `lockedBy` is set — another test session is working on it
-3. Skip any card where `blocked: true` — report it and move on
-4. If no cards are available: report "Testing queue is empty — nothing to do" and stop
-5. Otherwise: **work through all available cards one at a time, highest priority first** — do not wait for user confirmation
+1. Query the Testing column only:
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Testing`
+2. Filter available cards: skip any where `lockedBy` is set (another test session is working on it) or `blocked: true`
+3. If no cards are available: report "Testing queue is empty — nothing to do" and stop
+4. Otherwise: **work through all available cards one at a time, highest priority first** — do not wait for user confirmation
 
 For each card:
 - Set `lockedBy: "test-agent-{current unix timestamp}"` and `updated`

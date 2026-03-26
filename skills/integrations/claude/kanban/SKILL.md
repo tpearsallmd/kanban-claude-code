@@ -1,43 +1,38 @@
 ---
 name: kanban
-description: Read and display the current kanban board from the HTTP service. Shows all cards organized by column with priority and status.
+description: Reference documentation for kanban workflow, card schema, and API. Not executable — use /build, /test, /review for actual work.
 ---
 
-# Kanban Board Reader
+# Kanban Documentation Reference
 
-Display the current kanban board from the remote service.
+This is not an executable skill — it's a reference for the kanban workflow and rules used by all role skills.
 
-## Usage
+## When to use this
 
-```bash
-/kanban
-```
+- Before starting a `/build`, `/test`, or `/review` session, read [SDLC.md](./SDLC.md) to understand workflow gates and rules
+- When working on a card, refer to [KANBAN_AGENT_RULES.md](../../KANBAN_AGENT_RULES.md) for card schema and field ownership
+- When unsure about column flow or WIP limits, check [SDLC.md](./SDLC.md)
 
-## What it does
+## Documentation files
 
-1. **Health check** — verify the kanban service is running at `$KANBAN_HOST` (default: `localhost:5555`)
-2. **Read the board** — fetch `GET /kanban.json` from the service
-3. **Display summary** — show cards organized by column with priority, size, and status indicators
+- **[SDLC.md](./SDLC.md)** — Workflow gates, entry criteria, column rules, WIP limits, and session startup checklist
+- **[KANBAN_AGENT_RULES.md](../../KANBAN_AGENT_RULES.md)** — Complete API reference, card schema, field definitions, and board rules
+
+## Related executable skills
+
+- **[/build](../build/SKILL.md)** — Build session: picks up Ready cards one at a time
+- **[/test](../test/SKILL.md)** — Test session: picks up Testing cards one at a time
+- **[/review](../review/SKILL.md)** — Review session: picks up Code Review cards one at a time
+- **[/commit](../commit/SKILL.md)** — Smart commit with semver bumping
+- **[/pipeline](../pipeline/SKILL.md)** — Orchestrates build → review → test sequentially
 
 ## Setup
 
-Before running this skill, ensure:
+Before any role can work, ensure:
 1. The kanban Docker service is running on `$KANBAN_HOST` (or `localhost:5555` by default)
-2. Set the `KANBAN_HOST` environment variable if using a remote service:
+2. Set the environment variable:
    ```bash
    export KANBAN_HOST=homelab-01:5555
    ```
 
-See the main [README.md](../README.md) for full setup instructions.
-
-## Related skills
-
-- **[/build](../build/SKILL.md)** — Build session for Ready cards
-- **[/test](../test/SKILL.md)** — Test session for Testing cards
-- **[/review](../review/SKILL.md)** — Review session for Review cards
-- **[/commit](../commit/SKILL.md)** — Smart commit with semver bumping
-
-## Documentation
-
-- **[SDLC.md](./SDLC.md)** — Workflow gates, column rules, and session startup checklist
-- **[KANBAN_AGENT_RULES.md](../../KANBAN_AGENT_RULES.md)** — Complete API reference and card schema
+See the main [README.md](../README.md) for full Docker setup instructions.
