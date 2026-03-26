@@ -2,6 +2,8 @@
 
 This is the canonical rulebook for the build, review, and test skills.
 
+**For API reference and card schema, see [KANBAN_AGENT_RULES.md](../../KANBAN_AGENT_RULES.md).**
+
 ## Session Startup
 
 Every role session should:

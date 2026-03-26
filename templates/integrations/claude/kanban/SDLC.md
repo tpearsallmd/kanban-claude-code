@@ -2,6 +2,8 @@
 
 This is the canonical rulebook for all role sessions (build, test, review). Every role skill references this document. Gate logic is defined here once and owned here permanently.
 
+**For API reference and card schema, see [KANBAN_AGENT_RULES.md](../../KANBAN_AGENT_RULES.md).**
+
 ---
 
 ## Session Startup (all roles)
