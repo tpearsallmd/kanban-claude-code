@@ -1,39 +1,45 @@
 # Codex Integration
 
-Install these templates into your project's `.codex/skills/` directory.
+Install these skills into your user-level `~/.codex/skills/` directory for access across all projects.
 
-## Bootstrap Only
+## Setup (One Time)
 
-```bash
-mkdir -p .codex/skills/kanban
-cp kanban/templates/integrations/codex/kanban/SKILL.md .codex/skills/kanban/SKILL.md
-cp kanban/templates/integrations/codex/kanban/SDLC.md .codex/skills/kanban/SDLC.md
-```
-
-## Full Pipeline
+From your home directory:
 
 ```bash
-mkdir -p .codex/skills/kanban
-cp kanban/templates/integrations/codex/kanban/SKILL.md .codex/skills/kanban/SKILL.md
-cp kanban/templates/integrations/codex/kanban/SDLC.md .codex/skills/kanban/SDLC.md
+# Clone the kanban skills repo
+git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.codex/skills/kanban
 
-mkdir -p .codex/skills/build
-cp kanban/templates/integrations/codex/build/SKILL.md .codex/skills/build/SKILL.md
-
-mkdir -p .codex/skills/review
-cp kanban/templates/integrations/codex/review/SKILL.md .codex/skills/review/SKILL.md
-
-mkdir -p .codex/skills/test
-cp kanban/templates/integrations/codex/test/SKILL.md .codex/skills/test/SKILL.md
-
-mkdir -p .codex/skills/pipeline
-cp kanban/templates/integrations/codex/pipeline/SKILL.md .codex/skills/pipeline/SKILL.md
-
-mkdir -p .codex/skills/commit
-cp kanban/templates/integrations/codex/commit/SKILL.md .codex/skills/commit/SKILL.md
+# Set the kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
+echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-## Notes
+Replace `homelab-01:5555` with your actual kanban service hostname and port. Defaults to `localhost:5555` if not set.
 
-- The Codex templates use the `.codex/skills/<name>/SKILL.md` layout.
-- The pipeline assumes the same shared board schema and lifecycle gates as the Claude integration.
+## What You Get
+
+- `kanban/` — kanban board integration (SDLC reference, workflow gates)
+- `build/` — build skill with kanban integration
+- `review/` — code review skill with kanban integration
+- `test/` — test skill with kanban integration
+- `pipeline/` — pipeline orchestration skill
+- `commit/` — smart git commit with semver bumping
+
+## Update Skills
+
+To pull the latest versions:
+
+```bash
+cd ~/.codex/skills/kanban && git pull
+```
+
+## Verify
+
+In Codex, run:
+
+```bash
+/kanban
+```
+
+Should read the board from `$KANBAN_HOST` and display current tasks.

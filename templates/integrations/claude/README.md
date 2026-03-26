@@ -1,38 +1,45 @@
 # Claude Code Integration
 
-Install these templates into your project's `.claude/skills/` directory.
+Install these skills into your user-level `~/.claude/skills/` directory for access across all projects.
 
-## Bootstrap Only
+## Setup (One Time)
 
-```bash
-mkdir -p .claude/skills/kanban
-cp kanban/templates/integrations/claude/kanban/SKILL.md .claude/skills/kanban/SKILL.md
-```
-
-## Full Pipeline
+From your home directory:
 
 ```bash
-mkdir -p .claude/skills/kanban
-cp kanban/templates/integrations/claude/kanban/SKILL.md .claude/skills/kanban/SKILL.md
-cp kanban/templates/integrations/claude/kanban/SDLC.md .claude/skills/kanban/SDLC.md
+# Clone the kanban skills repo
+git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.claude/skills/kanban
 
-mkdir -p .claude/skills/build
-cp kanban/templates/integrations/claude/build/SKILL.md .claude/skills/build/SKILL.md
-
-mkdir -p .claude/skills/review
-cp kanban/templates/integrations/claude/review/SKILL.md .claude/skills/review/SKILL.md
-
-mkdir -p .claude/skills/test
-cp kanban/templates/integrations/claude/test/SKILL.md .claude/skills/test/SKILL.md
-
-mkdir -p .claude/skills/pipeline
-cp kanban/templates/integrations/claude/pipeline/SKILL.md .claude/skills/pipeline/SKILL.md
-
-mkdir -p .claude/skills/commit
-cp kanban/templates/integrations/claude/commit/SKILL.md .claude/skills/commit/SKILL.md
+# Set the kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
+echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-## Notes
+Replace `homelab-01:5555` with your actual kanban service hostname and port. Defaults to `localhost:5555` if not set.
 
-- The legacy compatibility paths `templates/SKILL.md` and `templates/pipeline/` still work for existing Claude installs.
-- New installs should prefer `templates/integrations/claude/`.
+## What You Get
+
+- `kanban/` — kanban board integration (SDLC reference, workflow gates)
+- `build/` — build skill with kanban integration
+- `review/` — code review skill with kanban integration
+- `test/` — test skill with kanban integration
+- `pipeline/` — pipeline orchestration skill
+- `commit/` — smart git commit with semver bumping
+
+## Update Skills
+
+To pull the latest versions:
+
+```bash
+cd ~/.claude/skills/kanban && git pull
+```
+
+## Verify
+
+In Claude Code, run:
+
+```bash
+/kanban
+```
+
+Should read the board from `$KANBAN_HOST` and display current tasks.
