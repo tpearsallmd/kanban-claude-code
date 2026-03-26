@@ -24,7 +24,8 @@ Run via: `/loop 5m /pipeline`
 
 1. Verify the kanban service is running:
    - Check: `curl -sf http://${KANBAN_HOST:-localhost:5555}/health`
-   - If it fails, the service must be running before this session starts — you cannot proceed
+   - If it fails: Report "Kanban service not running at `$KANBAN_HOST` (or `localhost:5555` if not set). Start the Docker service and try again." Then stop.
+   - Do NOT attempt to start the service — it must be running independently as a Docker container.
 2. Read the board from the HTTP API:
    - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json`
 
