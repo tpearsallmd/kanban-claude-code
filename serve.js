@@ -10,7 +10,9 @@ const MIME = {
   '.html': 'text/html',
   '.json': 'application/json',
   '.js': 'application/javascript',
-  '.css': 'text/css'
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon'
 };
 
 // Write queue: serialize concurrent writes to prevent data loss

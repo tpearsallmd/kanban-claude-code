@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY serve.js .
 COPY kanban.html .
+COPY favicon.svg .
 
 RUN mkdir -p /data
 
