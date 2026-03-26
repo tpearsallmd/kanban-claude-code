@@ -496,6 +496,10 @@ body {
       <input type="text" id="f-title" placeholder="Task title">
     </div>
     <div class="field">
+      <label>Project</label>
+      <input type="text" id="f-project" placeholder="Repository or project name">
+    </div>
+    <div class="field">
       <label>Description</label>
       <textarea id="f-desc" placeholder="Overview, context, acceptance criteria..."></textarea>
     </div>
@@ -1032,6 +1036,7 @@ function openModal(cardId) {
   if (cardId) {
     const card = state.cards.find(c => c.id === cardId);
     document.getElementById('f-title').value = card.title || '';
+    document.getElementById('f-project').value = card.project || '';
     document.getElementById('f-desc').value = card.description || '';
     document.getElementById('f-type').value = card.type || 'enhancement';
     document.getElementById('f-priority').value = card.priority || 'medium';
@@ -1048,6 +1053,7 @@ function openModal(cardId) {
     });
   } else {
     document.getElementById('f-title').value = '';
+    document.getElementById('f-project').value = '';
     document.getElementById('f-desc').value = '';
     document.getElementById('f-type').value = 'enhancement';
     document.getElementById('f-priority').value = 'medium';
@@ -1094,6 +1100,9 @@ function saveCard() {
   if (editingCardId) {
     const card = state.cards.find(c => c.id === editingCardId);
     card.title = title;
+    const project = document.getElementById('f-project').value.trim();
+    if (project) card.project = project;
+    else delete card.project;
     card.description = document.getElementById('f-desc').value.trim();
     card.type = document.getElementById('f-type').value;
     card.priority = document.getElementById('f-priority').value;
@@ -1108,6 +1117,7 @@ function saveCard() {
     });
   } else {
     const rand = Math.random().toString(36).slice(2, 5);
+    const project = document.getElementById('f-project').value.trim();
     const newCard = {
       id: `card_${Date.now()}_${rand}`,
       title,
@@ -1121,6 +1131,7 @@ function saveCard() {
       tags,
       ...sectionValues
     };
+    if (project) newCard.project = project;
     if (blocked) { newCard.blocked = true; newCard.blockedReason = blockedReason; }
     // Prepend so new cards appear at top of Backlog
     const firstBacklog = state.cards.findIndex(c => c.column === 'Backlog');
