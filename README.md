@@ -14,7 +14,7 @@ On your server or local machine:
 
 ```bash
 git clone https://github.com/tpearsallmd/kanban-claude-code.git
-cd kanban-claude-code
+cd kanban-claude-code/docker
 docker compose up -d
 ```
 
@@ -27,7 +27,7 @@ curl http://localhost:5555/health
 
 Open the UI at [http://localhost:5555](http://localhost:5555).
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed setup, remote deployment, and troubleshooting.
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) for detailed setup, remote deployment, and troubleshooting.
 
 ### 2. Install Agent Skills (User Level)
 
@@ -48,8 +48,8 @@ source ~/.bashrc
 Replace `homelab-01:5555` with your actual service hostname and port.
 
 For setup details, see:
-- [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
-- [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
+- [skills/integrations/claude/README.md](skills/integrations/claude/README.md)
+- [skills/integrations/codex/README.md](skills/integrations/codex/README.md)
 
 ## Features
 
@@ -82,17 +82,17 @@ Backlog → Ready → In Progress → Testing → Review → Done
 
 ## Agent Integrations
 
-The board is agent-neutral. Agent-specific skills and SDLC rules live under `templates/integrations/`.
+The board is agent-neutral. Agent-specific skills and SDLC rules live under `skills/integrations/`.
 
 ### Claude Code
 
-Setup: [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
+Setup: [skills/integrations/claude/README.md](skills/integrations/claude/README.md)
 
 Skills include: kanban bootstrap, build, code review, test, pipeline orchestration, smart commit.
 
 ### Codex
 
-Setup: [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
+Setup: [skills/integrations/codex/README.md](skills/integrations/codex/README.md)
 
 Same skills, Codex-specific syntax.
 
@@ -103,7 +103,7 @@ Same skills, Codex-specific syntax.
 3. **Card transitions**: move through workflow gates (Ready → In Progress → Testing → Review → Done)
 4. **Session end**: move card forward, add discovered tasks to Backlog
 
-See [templates/integrations/KANBAN_AGENT_RULES.md](templates/integrations/KANBAN_AGENT_RULES.md) for the complete API reference and workflow rules.
+See [skills/integrations/KANBAN_AGENT_RULES.md](skills/integrations/KANBAN_AGENT_RULES.md) for the complete API reference and workflow rules.
 
 ## Card Schema
 
@@ -134,27 +134,31 @@ Optional sections (include only when populated):
 ## Files & Architecture
 
 ```text
-├── Dockerfile                    # Docker image definition
-├── docker-compose.yml            # Container orchestration
-├── serve.js                      # HTTP server (port 5555)
-├── kanban.html                   # UI (single file, zero deps)
-├── favicon.svg                   # Browser icon
-├── kanban-board.json             # Board data (persists in Docker volume)
-├── kanban-spec.md                # Full specification for operators
-├── KANBAN_AGENT_RULES.md         # Agent-facing API & workflow rules
-├── INSTALLATION.md               # Setup and deployment guide
 ├── README.md                     # This file
-└── templates/integrations/
-    ├── KANBAN_AGENT_RULES.md     # Canonical agent reference
-    ├── claude/                   # Claude Code integration
-    │   ├── README.md
-    │   ├── kanban/SDLC.md        # Workflow gates and rules
-    │   ├── build/SKILL.md
-    │   ├── review/SKILL.md
-    │   ├── test/SKILL.md
-    │   ├── pipeline/SKILL.md
-    │   └── commit/SKILL.md
-    └── codex/                    # Codex integration (same structure)
+├── docker/
+│   ├── Dockerfile                # Docker image definition
+│   ├── docker-compose.yml        # Container orchestration
+│   ├── .env.example              # Environment variable template
+│   ├── serve.js                  # HTTP server (port 5555)
+│   ├── kanban.html               # UI (single file, zero deps)
+│   ├── favicon.svg               # Browser icon
+│   └── kanban-board.json         # Board data (persists in Docker volume)
+├── skills/
+│   └── integrations/
+│       ├── KANBAN_AGENT_RULES.md # Canonical agent API reference
+│       ├── claude/               # Claude Code integration
+│       │   ├── README.md
+│       │   ├── kanban/SDLC.md    # Workflow gates and rules
+│       │   ├── build/SKILL.md
+│       │   ├── review/SKILL.md
+│       │   ├── test/SKILL.md
+│       │   ├── pipeline/SKILL.md
+│       │   └── commit/SKILL.md
+│       └── codex/                # Codex integration (same structure)
+└── docs/
+    ├── INSTALLATION.md           # Setup and deployment guide
+    ├── kanban-spec.md            # Full specification for operators
+    └── CHANGELOG.md              # Release history
 ```
 
 ## Deployment Models
@@ -162,6 +166,7 @@ Optional sections (include only when populated):
 ### Local (Development)
 
 ```bash
+cd kanban-claude-code/docker
 docker compose up -d
 export KANBAN_HOST=localhost:5555
 ```
@@ -170,13 +175,14 @@ export KANBAN_HOST=localhost:5555
 
 ```bash
 # On homelab-01:
+cd kanban-claude-code/docker
 docker compose up -d
 
 # On local machine:
 export KANBAN_HOST=homelab-01:5555
 ```
 
-See [INSTALLATION.md](INSTALLATION.md) for full setup instructions, volume management, troubleshooting, and backup procedures.
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) for full setup instructions, volume management, troubleshooting, and backup procedures.
 
 ## Done History
 

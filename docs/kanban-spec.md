@@ -14,7 +14,7 @@ The kanban service is deployed as a Docker container:
 - **Concurrency** — server serializes writes via a promise queue; concurrent requests wait in line
 - **Configuration** — port and data file path configurable via environment variables
 
-See [INSTALLATION.md](INSTALLATION.md) for setup instructions.
+See [INSTALLATION.md](../docs/INSTALLATION.md) for setup instructions.
 
 ## Files
 
@@ -22,14 +22,21 @@ This repo contains:
 
 ```
 /kanban-claude-code
-├── kanban.html              # UI — served by the container
-├── serve.js                 # HTTP server (port 5555)
-├── Dockerfile               # Container definition
-├── docker-compose.yml       # Container orchestration
-├── .dockerignore             # Build exclusions
-├── .env.example             # Configuration template
-├── kanban-spec.md           # This file
-└── INSTALLATION.md          # Setup guide
+├── docker/
+│   ├── kanban.html              # UI — served by the container
+│   ├── serve.js                 # HTTP server (port 5555)
+│   ├── Dockerfile               # Container definition
+│   ├── docker-compose.yml       # Container orchestration
+│   ├── .dockerignore             # Build exclusions
+│   ├── .env.example             # Configuration template
+│   └── kanban-board.json        # Board data (in volume)
+├── skills/integrations/
+│   ├── KANBAN_AGENT_RULES.md    # Agent API reference
+│   ├── claude/
+│   └── codex/
+└── docs/
+    ├── kanban-spec.md           # This file
+    └── INSTALLATION.md          # Setup guide
 ```
 
 When deployed, the board file lives in a Docker volume (`kanban-data` → `/data/kanban-board.json` in the container).

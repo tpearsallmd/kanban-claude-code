@@ -14,12 +14,12 @@ The kanban board now runs as a standalone Docker container, accessible via HTTP.
 
 ```bash
 git clone https://github.com/yourorg/kanban-claude-code.git
-cd kanban-claude-code
+cd kanban-claude-code/docker
 ```
 
 ### 2. Prepare your board file
 
-If you have an existing board file, copy it to the project directory:
+If you have an existing board file, copy it to the docker directory:
 ```bash
 cp /path/to/existing/kanban-board.json .
 ```
@@ -52,7 +52,7 @@ The board file persists in the Docker volume — it won't be lost when the conta
 
 ## Configuration
 
-Create a `.env` file in the project directory to customize the service (see `.env.example` for a template):
+Create a `.env` file in the docker directory to customize the service (see `.env.example` for a template):
 
 ```env
 # External port (Docker host → container)
