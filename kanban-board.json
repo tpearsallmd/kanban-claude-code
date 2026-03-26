@@ -1,0 +1,16 @@
+{
+  "columns": [
+    "Backlog",
+    "Ready",
+    "In Progress",
+    "Testing",
+    "Review",
+    "Done"
+  ],
+  "wipLimits": {
+    "In Progress": 3,
+    "Testing": 2,
+    "Review": 2
+  },
+  "cards": []
+}
