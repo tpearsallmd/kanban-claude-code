@@ -15,8 +15,12 @@ This skill reads the board and dispatches the build, review, and test workflows 
 
 ## Startup
 
-1. Read `kanban-board.json`.
-2. Remember that cards live in a flat `cards` array and are filtered by the `column` field.
+1. Verify the kanban service is running:
+   - Check: `curl -sf http://${KANBAN_HOST:-localhost:5555}/health`
+   - If it fails, the service must be running before this session starts — you cannot proceed
+2. Read the board from the HTTP API:
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json`
+   - Cards live in a flat `cards` array and are filtered by the `column` field
 
 ## Dispatch Logic
 

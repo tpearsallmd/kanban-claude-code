@@ -22,12 +22,13 @@ Run via: `/loop 5m /pipeline`
 
 ## Startup
 
-1. Start the kanban server if not already running:
-   - Check: `curl -s http://localhost:5555/kanban-board.json > /dev/null 2>&1`
-   - If not running: `node kanban/serve.js` (Bash, `run_in_background: true`)
-2. Read `kanban-board.json`
+1. Verify the kanban service is running:
+   - Check: `curl -sf http://${KANBAN_HOST:-localhost:5555}/health`
+   - If it fails, the service must be running before this session starts — you cannot proceed
+2. Read the board from the HTTP API:
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json`
 
-**Board schema reminder:** `columns` is an array of strings. Cards are in a flat `board.cards` array with a `column` field. Filter cards by column: `board.cards.filter(c => c.column === "Ready")`. See `SDLC.md -> Board JSON Schema` for full details.
+**Board schema reminder:** The HTTP response is a JSON object with `columns` (array of strings) and `cards` (flat array). Cards have a `column` field. Filter by column: `board.cards.filter(c => c.column === "Ready")`. See `SDLC.md` and `KANBAN_AGENT_RULES.md` for full schema details.
 
 ---
 
