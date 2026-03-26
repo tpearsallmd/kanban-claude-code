@@ -9,8 +9,8 @@ services:
     volumes:
       - kanban-data:/data
     environment:
-      - KANBAN_DATA_FILE=/data/kanban-board.json
-      - KANBAN_PORT=5555
+      - KANBAN_DATA_FILE=${KANBAN_DATA_FILE:-/data/kanban-board.json}
+      - KANBAN_PORT=${KANBAN_PORT:-5555}
 
 volumes:
   kanban-data:

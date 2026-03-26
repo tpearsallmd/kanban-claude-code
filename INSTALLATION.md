@@ -52,10 +52,20 @@ The board file persists in the Docker volume — it won't be lost when the conta
 
 ## Configuration
 
-Create a `.env` file in the project directory to customize the port:
+Create a `.env` file in the project directory to customize the service (see `.env.example` for a template):
 
 ```env
+# External port (Docker host → container)
 KANBAN_HOST_PORT=5555
+
+# Internal container port (rarely needs to change)
+KANBAN_PORT=5555
+
+# Path to board file inside the container
+KANBAN_DATA_FILE=/data/kanban-board.json
+
+# Hostname for remote deployments (optional)
+# KANBAN_HOST=kanban.example.com
 ```
 
 Then restart:
