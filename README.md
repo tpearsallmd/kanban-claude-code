@@ -34,11 +34,19 @@ See [docs/INSTALLATION.md](docs/INSTALLATION.md) for detailed setup, remote depl
 From your home directory, install skills for Claude and Codex:
 
 ```bash
-# Claude
-git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.claude/skills/kanban
+# Clone the repo
+git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
 
-# Codex
-git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.codex/skills/kanban
+# Claude — extract integration files to skills directory
+mkdir -p ~/.claude/skills
+mv /tmp/kanban-setup/skills/integrations/* ~/.claude/skills/kanban
+rm -rf /tmp/kanban-setup
+
+# Codex — same process
+git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
+mkdir -p ~/.codex/skills
+mv /tmp/kanban-setup/skills/integrations/* ~/.codex/skills/kanban
+rm -rf /tmp/kanban-setup
 
 # Set kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
 echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
