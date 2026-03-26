@@ -841,7 +841,10 @@ function makeCardEl(card) {
     ? `<span class="size-badge">${esc(card.size)}</span>`
     : '';
 
+  const projectLabel = card.project ? `<div class="card-repo">${esc(card.project)}</div>` : '';
+
   el.innerHTML = `
+    ${projectLabel}
     <div class="card-title">${blockedLabel}${typeLabel}${esc(card.title)} ${sizeLabel}</div>
     ${blockedReason}
     ${tagsHtml}

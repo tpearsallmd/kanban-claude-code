@@ -1,0 +1,5 @@
+kanban-board.json
+.git
+node_modules
+*.md
+templates/

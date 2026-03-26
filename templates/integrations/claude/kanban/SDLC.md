@@ -8,11 +8,11 @@ This is the canonical rulebook for all role sessions (build, test, review). Ever
 
 Every role session runs these steps on start, before doing anything role-specific:
 
-1. **Start the kanban server** if not already running:
-   - Check: `curl -s http://localhost:5555/kanban-board.json > /dev/null 2>&1`
-   - If not running: `node kanban/serve.js` (Bash, `run_in_background: true`)
-   - Confirm it responds before proceeding
-2. **Read `kanban-board.json`** — current board state
+1. **Verify kanban service is running**:
+   - Check: `curl -sf http://${KANBAN_HOST:-localhost}:5555/health`
+   - If it fails, you cannot proceed — the service must be running before this session starts
+2. **Read the board**:
+   - `curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json`
 3. **Filter to your role's column** — each role only works cards in its designated column (see role skills)
 4. **Present available cards** to the user — do not begin any work, do not claim any card
 5. **Wait for the user to confirm** which card to pick up before proceeding
@@ -182,16 +182,11 @@ A general instruction to do work does NOT imply approval. Explicit sign-off only
 
 ## Board Rules
 
-- Move a card: update `column` and `updated` only (plus any required fields for that gate)
-- Add a card: append to `cards` array — id format `card_{timestamp}_{random3}`
+- The kanban service runs as a standalone Docker container at `http://${KANBAN_HOST:-localhost}:5555`
+- **Never read or write `kanban-board.json` directly** — always use HTTP (`GET` and `PUT /kanban.json`)
+- Move a card: read the board, update `column` and `updated` only (plus any required fields for that gate), write back via HTTP
+- Add a card: read the board, append to `cards` array — id format `card_{timestamp}_{random3}`, write back via HTTP
 - Never modify: `created`, `id`
 - Blocked cards: never claim. Report to user and skip.
 - Always pretty-print JSON with 2-space indentation
-- Kanban server: port 5555, `node kanban/serve.js` — changes reflect immediately in the browser
 - The UI shows the 25 most recently completed cards in `Done`; older completed cards remain in the same JSON file with `archived: true`
-
----
-
-## Schema Migration
-
-If you pull a submodule update, check `kanban/CHANGELOG.md` for schema changes and follow the "Migration (for AI)" instructions.

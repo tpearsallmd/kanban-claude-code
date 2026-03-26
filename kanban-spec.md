@@ -1,19 +1,38 @@
-# Local Kanban Board — Spec & Design
+# Kanban Board — Spec & Design
 
 ## Overview
-A single-repo kanban board for managing development tasks collaboratively between a human and a coding agent. The UI (`kanban.html`) and data (`kanban.json`) live in the same directory. The agent reads and writes the JSON directly; the human uses the browser UI for planning and prioritization.
+A unified kanban board for managing development tasks collaboratively between humans and coding agents across multiple projects. The service runs as a standalone Docker container with a persistent volume for the board file. The UI (`kanban.html`) is served by the container; all board access (read/write) goes through HTTP endpoints. The agent never reads or writes files directly — it always uses the HTTP API.
 
 ---
 
+## Architecture
+
+The kanban service is deployed as a Docker container:
+- **Container** — runs `serve.js` on port 5555
+- **Volume** — named Docker volume (`kanban-data`) holds `kanban-board.json`, persists across restarts
+- **HTTP API** — agents and UI communicate via `GET /kanban.json` and `PUT /kanban.json`
+- **Concurrency** — server serializes writes via a promise queue; concurrent requests wait in line
+- **Configuration** — port and data file path configurable via environment variables
+
+See [INSTALLATION.md](INSTALLATION.md) for setup instructions.
+
 ## Files
 
+This repo contains:
+
 ```
-/kanban
-├── kanban.html       # The entire UI — single file, no dependencies
-├── kanban.json       # The data file — shared between UI and the agent
-├── serve.js          # Tiny Node.js HTTP server (read + write on localhost:5555)
-└── kanban-spec.md    # This file
+/kanban-claude-code
+├── kanban.html              # UI — served by the container
+├── serve.js                 # HTTP server (port 5555)
+├── Dockerfile               # Container definition
+├── docker-compose.yml       # Container orchestration
+├── .dockerignore             # Build exclusions
+├── .env.example             # Configuration template
+├── kanban-spec.md           # This file
+└── INSTALLATION.md          # Setup guide
 ```
+
+When deployed, the board file lives in a Docker volume (`kanban-data` → `/data/kanban-board.json` in the container).
 
 ---
 
@@ -59,8 +78,6 @@ Before moving a card from **Ready** to **Design** or **In Progress**, the agent 
 
 ```json
 {
-  "version": 1,
-  "repo": "SI_RDM",
   "columns": ["Backlog", "Ready", "Design", "In Progress", "Testing", "Review", "Done"],
   "wipLimits": {
     "Design": 2,
@@ -134,7 +151,7 @@ The `wipLimits` object sets maximum card counts per column. The UI warns when a 
 - Keep completed history in the same file; the UI automatically archives older `Done` cards after the 25 most recent by setting `archived: true`
 - Only include section fields in JSON when they have content — omit empty sections to keep JSON clean
 - Before moving a card to Testing: verify that relevant documentation in `docs/` has been updated
-- Never modify the `columns` or `repo` fields
+- Never modify the `columns` field
 - Always pretty-print JSON with 2-space indentation when writing
 
 ---
@@ -178,12 +195,12 @@ Each card shows:
 
 ## Agent Integrations
 
-The board core is agent-neutral. Installation templates for supported agents live under:
+The board is agent-neutral. Integration templates for supported agents live under `templates/integrations/`:
 
-- `templates/integrations/claude/`
-- `templates/integrations/codex/`
+- `templates/integrations/claude/kanban/` — Claude integration (SKILL.md, SDLC.md)
+- `templates/integrations/codex/kanban/` — Codex integration
 
-Each integration maps the same shared board schema and lifecycle to that agent's skill system.
+Each integration uses the HTTP API to read and update the board. See [INSTALLATION.md](INSTALLATION.md) for the API reference.
 
 ### Skill Roles
 
@@ -195,16 +212,20 @@ Each integration maps the same shared board schema and lifecycle to that agent's
 
 ### Session Start Pattern
 ```
-Read kanban/kanban.json. Find the highest priority card in the Ready column.
-Assess if the description has enough detail. If yes, move it to In Progress and begin work.
-If not, update the description with what's missing and leave it in Ready.
+1. Verify kanban service: curl -sf http://${KANBAN_HOST:-localhost}:5555/health
+2. Read board: curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+3. Find the highest priority card in the Ready column
+4. Assess if the description has enough detail
+   - If yes: move it to In Progress and begin work
+   - If not: update the description with what's missing and leave it in Ready
 ```
 
 ### Session End Pattern
 ```
-Update kanban/kanban.json: move card [id] to Testing (or Review if tests pass).
-Update the appropriate structured sections (implementationNotes, testPlan, etc.).
-If any new tasks were discovered during this session, add them to the Backlog.
+1. Read current board: curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+2. Update the card: move to next column, populate structured sections
+3. Write back: curl -X PUT http://${KANBAN_HOST:-localhost}:5555/kanban.json -d '...'
+4. Add any new tasks discovered during this session to the Backlog
 ```
 
 ### Agent-Friendly Design Decisions
@@ -212,76 +233,9 @@ If any new tasks were discovered during this session, add them to the Backlog.
 - Column names are explicit strings, not indices
 - The `columns` array defines valid column values — agents can read it to validate moves
 - Structured sections (`requirements`, `design`, etc.) keep agents from clobbering other sections when updating
-- Pretty-printed JSON reduces diff noise in git
+- Pretty-printed JSON with 2-space indentation reduces diff noise
 - All timestamps in ISO 8601
-
----
-
-## Git Submodule Usage
-
-The kanban board is designed to be a standalone Git repository that can be added to any project as a submodule. This allows improvements to the UI, server, and spec to be shared across all repositories.
-
-### Repository Structure (as submodule)
-
-```
-kanban/                    # ← git submodule
-├── kanban.html            # UI — shared across repos
-├── kanban-spec.md         # This spec — shared across repos
-├── serve.js               # Server — shared across repos
-├── CHANGELOG.md           # Schema/structural changes for migration
-└── templates/
-    ├── kanban.json.template   # Empty board template for new repos
-    └── integrations/          # Agent-specific installation templates
-```
-
-Each consuming repo's `kanban.json` is **gitignored in the submodule** but **tracked in the parent repo**. This way:
-
-- The submodule contains only shared code (HTML, JS, spec)
-- Each repo has its own board data
-- Pulling submodule updates gives you UI/server improvements without touching your cards
-
-### Adding to a New Repo
-
-```bash
-# 1. Add the submodule
-git submodule add <kanban-repo-url> kanban
-
-# 2. Create your board from the template
-cp kanban/templates/kanban.json.template kanban-board.json
-
-# 3. Install the integration that matches your agent
-# See templates/integrations/claude/README.md or templates/integrations/codex/README.md
-
-# 4. Track your board data in the parent repo
-git add kanban/kanban.json
-```
-
-### Pulling Updates
-
-```bash
-cd kanban && git pull origin main && cd ..
-git add kanban
-git commit -m "Update kanban submodule"
-```
-
-If the update includes a schema change (noted in `CHANGELOG.md`), the migration instructions are written so an agent can apply them automatically.
-
-### CHANGELOG.md Format
-
-```markdown
-## [version] - YYYY-MM-DD
-
-### Schema Changes
-- **Added field `foo`** — optional string, no migration needed
-- **Renamed field `bar` → `baz`** — migration: rename key in all cards
-
-### Migration (for AI)
-For each card in kanban.json:
-  - If card has field "bar", rename it to "baz"
-  - Add "foo" field only if meaningful content exists (otherwise omit)
-```
-
-The "Migration (for AI)" section is written so that agents can apply the changes to any existing `kanban.json` without manual intervention.
+- HTTP endpoints serialize writes — concurrent requests are safe and don't overwrite each other
 
 ---
 

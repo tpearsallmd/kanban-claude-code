@@ -9,11 +9,11 @@ Read `kanban-board.json` and `kanban/kanban-spec.md` to understand the current b
 
 ## Session Start Protocol
 
-1. **Start the kanban server** if it's not already running:
-   - Check if port 5555 is in use: `curl -s http://localhost:5555/kanban-board.json > /dev/null 2>&1`
-   - If not running, start it in the background: `node kanban/serve.js` (using Bash with `run_in_background: true`)
-   - Confirm it's serving before proceeding
-2. Read `kanban-board.json`
+1. **Verify kanban service is running**:
+   - Check: `curl -sf http://${KANBAN_HOST:-localhost}:5555/health`
+   - If it fails, you cannot proceed — the service must be running before this session starts
+2. **Read the board**:
+   - `curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json`
 3. Summarize the board state: how many cards per column, what's in progress, what's in review
 4. Identify the highest priority card in **Ready** (or **In Progress** if resuming work)
 5. Assess the card description — is there enough context to act on?
@@ -59,16 +59,14 @@ Each column transition is a discrete gate. **Gates are not optional — never sk
 
 ## Board Rules
 
-- To move a card: update `column` and `updated` fields only
-- To add a card: append to `cards` array with id format `card_{timestamp}_{random3}`
+- The kanban service runs as a standalone Docker container at `http://${KANBAN_HOST:-localhost}:5555`
+- **Never read or write `kanban-board.json` directly** — always use HTTP (`GET` and `PUT /kanban.json`)
+- To move a card: read the board, update `column` and `updated` fields only, write back via HTTP
+- To add a card: read the board, append to `cards` array with id format `card_{timestamp}_{random3}`, write back via HTTP
 - Valid columns: Backlog, Ready, Design, In Progress, Testing, Review, Done
 - Card fields: id, title, description, type (enhancement/defect), priority (high/medium/low), size (XS/S/M/L/XL), column, created, updated, completedAt, archived, tags, blocked, blockedReason
 - Structured sections (optional, omit if empty): requirements, design, implementationNotes, testPlan, reviewNotes
 - Check `wipLimits` before moving cards — do not exceed without flagging
 - Always pretty-print JSON with 2-space indentation
-- The kanban server runs on port 5555 (`node kanban/serve.js`) — changes to the JSON are immediately reflected in the browser
 - The UI shows only the 25 most recently completed `Done` cards; older completed cards remain in the same JSON file with `archived: true`
 
-## Schema Migration
-
-If you pull a submodule update, check `kanban/CHANGELOG.md` for schema changes. Follow the "Migration (for AI)" instructions to update `kanban-board.json` to the latest schema version.
