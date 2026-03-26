@@ -6,15 +6,17 @@ Reference for AI agents integrating with the kanban service. For deployment info
 
 ## Quick Start
 
+Set `KANBAN_HOST` environment variable (e.g., `export KANBAN_HOST=homelab-01:5555`). Defaults to `localhost:5555` if unset.
+
 ```bash
 # Verify service is running
-curl -sf http://${KANBAN_HOST:-localhost}:5555/health
+curl -sf http://${KANBAN_HOST:-localhost:5555}/health
 
 # Read the board
-curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
 
 # Update the board (read, modify, write back with 2-space indent)
-curl -X PUT http://${KANBAN_HOST:-localhost}:5555/kanban.json \
+curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
   -H "Content-Type: application/json" \
   -d "$(jq --indent 2 . updated_board.json)"
 ```
@@ -142,11 +144,10 @@ The service serializes writes via a promise queue. Concurrent PUTs are safe — 
 
 ## Environment Variables
 
-- `KANBAN_HOST` — hostname of the kanban service (default: `localhost`)
-- `KANBAN_HOST_PORT` — port mapping (default: `5555`)
+- `KANBAN_HOST` — service endpoint in format `hostname:port` (default: `localhost:5555`)
 
 Example:
 ```bash
-export KANBAN_HOST=homelab-01
-curl -sf http://${KANBAN_HOST}:5555/health
+export KANBAN_HOST=homelab-01:5555
+curl -sf http://${KANBAN_HOST:-localhost:5555}/health
 ```
