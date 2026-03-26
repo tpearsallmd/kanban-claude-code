@@ -3,14 +3,16 @@
     "Backlog",
     "Ready",
     "In Progress",
+    "Code Review",
     "Testing",
     "Review",
     "Done"
   ],
   "wipLimits": {
     "In Progress": 3,
-    "Testing": 2,
-    "Review": 2
+    "Code Review": 2,
+    "Testing": 3,
+    "Review": 5
   },
   "cards": []
 }

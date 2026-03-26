@@ -81,7 +81,7 @@ For setup details, see:
 ## Workflow
 
 ```text
-Backlog → Ready → In Progress → Testing → Review → Done
+Backlog → Ready → In Progress → Code Review → Testing → Review → Done
 ```
 
 | Column | Owner | Purpose |
@@ -89,8 +89,9 @@ Backlog → Ready → In Progress → Testing → Review → Done
 | **Backlog** | Human | All ideas, bugs, enhancements — unsorted |
 | **Ready** | Human/Agent | Groomed, prioritized, actionable |
 | **In Progress** | Agent | Actively writing code |
+| **Code Review** | Agent | Automated code review (linting, testing, security) |
 | **Testing** | Agent | Write/run tests, verify implementation |
-| **Review** | Human | Review the agent's work |
+| **Review** | Human | Human review and approval |
 | **Done** | — | Completed work; recent 25 shown in UI, older cards archived |
 
 ## Agent Integrations
