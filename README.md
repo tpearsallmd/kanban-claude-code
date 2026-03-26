@@ -1,186 +1,203 @@
 # Kanban for Coding Agents
 
-A local kanban board for human-agent collaboration. Single HTML file, zero dependencies, JSON data store.
+A unified kanban board for human-agent collaboration across multiple projects. Runs as a standalone Docker service with HTTP API access. Agents read and update the board via HTTP; humans use the browser UI for planning.
 
 ## Why
 
-Coding agents work best when they know what to work on, what changed, and what is next. This board gives them that context through a simple JSON file they can read and write directly. The human uses the browser UI for planning and prioritization; the agent picks up cards, updates progress, and moves them through the workflow.
+Coding agents work best when they know what to work on, what changed, and what to do next. This board gives them context through a simple JSON API they can read and write. The human uses the browser UI for planning and prioritization; the agent picks up cards, updates progress, and moves them through the workflow.
 
 ## Quick Start
 
+### 1. Deploy the Docker Service
+
+On your server or local machine:
+
 ```bash
-# Clone into your project
-git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
-
-# Create your board from the template
-cp kanban/templates/kanban.json.template kanban-board.json
-# Edit kanban-board.json to set your repo name
-
-# Start the server
-node kanban/serve.js
-
-# Open http://localhost:5555
+git clone https://github.com/tpearsallmd/kanban-claude-code.git
+cd kanban-claude-code
+docker compose up -d
 ```
+
+Verify it's running:
+
+```bash
+curl http://localhost:5555/health
+# Output: ok
+```
+
+Open the UI at [http://localhost:5555](http://localhost:5555).
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed setup, remote deployment, and troubleshooting.
+
+### 2. Install Agent Skills (User Level)
+
+From your home directory, install skills for Claude and Codex:
+
+```bash
+# Claude
+git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.claude/skills/kanban
+
+# Codex
+git clone https://github.com/tpearsallmd/kanban-claude-code.git ~/.codex/skills/kanban
+
+# Set kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
+echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Replace `homelab-01:5555` with your actual service hostname and port.
+
+For setup details, see:
+- [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
+- [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
 
 ## Features
 
-- Drag-and-drop cards between columns
-- WIP limits with visual warnings
-- Blocked card flag with reason
-- T-shirt sizing (XS/S/M/L/XL)
-- Priority indicators (high/medium/low)
-- Collapsible structured sections: Requirements, Design, Implementation Notes, Test Plan, Review Notes
-- Dark mode UI
-- Auto-save on every action
-- Recent-completion `Done` view with older completed cards archived in the same JSON file
-- Zero dependencies, zero build step
+- **Drag-and-drop** — cards between columns
+- **WIP limits** with visual warnings
+- **Blocked flag** with reason
+- **T-shirt sizing** (XS/S/M/L/XL) and priority (high/medium/low)
+- **Structured sections** — Requirements, Design, Implementation Notes, Test Plan, Review Notes
+- **Project field** — identify which repo a card belongs to
+- **Auto-save** on every action
+- **Dark mode** UI
+- **Completion history** — completed cards stay in the board (25 recent in UI, older ones archived)
+- **HTTP API** — agents read/write via curl, no file I/O
+- **Concurrent write safety** — writes are queued automatically
 
 ## Workflow
 
 ```
-Backlog → Ready → Design → In Progress → Testing → Review → Done
+Backlog → Ready → In Progress → Testing → Review → Done
 ```
 
 | Column | Owner | Purpose |
-| --- | --- | --- |
-| **Backlog** | Human | All ideas, bugs, enhancements |
+|--------|-------|---------|
+| **Backlog** | Human | All ideas, bugs, enhancements — unsorted |
 | **Ready** | Human/Agent | Groomed, prioritized, actionable |
-| **Design** | Agent | Plan approach, update design section |
 | **In Progress** | Agent | Actively writing code |
 | **Testing** | Agent | Write/run tests, verify implementation |
 | **Review** | Human | Review the agent's work |
-| **Done** | -- | Recent completed work; older completed cards stay archived in the same board file |
+| **Done** | — | Completed work; recent 25 shown in UI, older cards archived |
 
-## Integrations
+## Agent Integrations
 
-The board core is vendor-neutral. Agent-specific setup lives under `templates/integrations/`.
+The board is agent-neutral. Agent-specific skills and SDLC rules live under `templates/integrations/`.
 
 ### Claude Code
 
-Use [templates/integrations/claude/README.md](templates/integrations/claude/README.md).
+Setup: [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
+
+Skills include: kanban bootstrap, build, code review, test, pipeline orchestration, smart commit.
 
 ### Codex
 
-Use [templates/integrations/codex/README.md](templates/integrations/codex/README.md).
+Setup: [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
 
-### How Agents Use the Board
+Same skills, Codex-specific syntax.
 
-- **Session start**: reads `kanban.json`, identifies work to do
-- **During work**: updates structured sections (design, implementation notes, etc.)
-- **Session end**: moves card forward, adds discovered tasks to Backlog
+## How Agents Use the Board
 
-## Structured Card Sections
+1. **Session start**: verify service health, read the board via HTTP
+2. **During work**: update card sections (design, implementation notes, test results, etc.)
+3. **Card transitions**: move through workflow gates (Ready → In Progress → Testing → Review → Done)
+4. **Session end**: move card forward, add discovered tasks to Backlog
 
-Cards have optional collapsible sections that get populated as work progresses:
+See [templates/integrations/KANBAN_AGENT_RULES.md](templates/integrations/KANBAN_AGENT_RULES.md) for the complete API reference and workflow rules.
 
-| Section | Populated During | Content |
-| --- | --- | --- |
-| **Requirements** | Ready/Design | Acceptance criteria, constraints, edge cases |
-| **Design** | Design | Approach, affected files, architecture notes |
-| **Implementation Notes** | In Progress | What changed, key decisions |
-| **Test Plan** | Testing | How to test, expected results |
-| **Review Notes** | Review | Feedback, docs updated, approval notes |
+## Card Schema
+
+```json
+{
+  "id": "card_1741234567_abc",
+  "title": "Short task name",
+  "description": "Longer context and acceptance criteria",
+  "type": "enhancement",
+  "priority": "high",
+  "size": "M",
+  "column": "Ready",
+  "project": "repo-name",
+  "created": "2026-03-12T10:00:00Z",
+  "updated": "2026-03-12T10:00:00Z",
+  "tags": ["backend", "urgent"],
+  "blocked": false
+}
+```
+
+Optional sections (include only when populated):
+- **requirements** — acceptance criteria, constraints, edge cases
+- **design** — approach, affected files, architecture
+- **implementationNotes** — what changed, decisions (build phase)
+- **testPlan** — how to test, expected results (test phase)
+- **reviewNotes** — summary for reviewer (review phase)
+
+## Files & Architecture
+
+```text
+├── Dockerfile                    # Docker image definition
+├── docker-compose.yml            # Container orchestration
+├── serve.js                      # HTTP server (port 5555)
+├── kanban.html                   # UI (single file, zero deps)
+├── favicon.svg                   # Browser icon
+├── kanban-board.json             # Board data (persists in Docker volume)
+├── kanban-spec.md                # Full specification for operators
+├── KANBAN_AGENT_RULES.md         # Agent-facing API & workflow rules
+├── INSTALLATION.md               # Setup and deployment guide
+├── README.md                     # This file
+└── templates/integrations/
+    ├── KANBAN_AGENT_RULES.md     # Canonical agent reference
+    ├── claude/                   # Claude Code integration
+    │   ├── README.md
+    │   ├── kanban/SDLC.md        # Workflow gates and rules
+    │   ├── build/SKILL.md
+    │   ├── review/SKILL.md
+    │   ├── test/SKILL.md
+    │   ├── pipeline/SKILL.md
+    │   └── commit/SKILL.md
+    └── codex/                    # Codex integration (same structure)
+```
+
+## Deployment Models
+
+### Local (Development)
+
+```bash
+docker compose up -d
+export KANBAN_HOST=localhost:5555
+```
+
+### Remote Server
+
+```bash
+# On homelab-01:
+docker compose up -d
+
+# On local machine:
+export KANBAN_HOST=homelab-01:5555
+```
+
+See [INSTALLATION.md](INSTALLATION.md) for full setup instructions, volume management, troubleshooting, and backup procedures.
 
 ## Done History
 
-Completed cards stay in the same board JSON for traceability.
+Completed cards stay in the same board JSON for traceability:
 
-- The UI shows the 25 most recently completed cards in **Done**
+- The UI shows the **25 most recently completed** cards in **Done**
 - Older completed cards are marked `archived: true` and hidden from the active board
-- When a card first enters **Done**, the board stamps `completedAt`
-- Existing boards do not need template changes for this feature; the metadata is added automatically as cards move through the board
+- When a card first enters **Done**, the board records `completedAt`
+- Completed history is permanent; older cards are never deleted
 
-## Pipeline Skills
+## Update Skills
 
-The shared workflow supports dedicated build, code review, and test sessions. Agent-specific pipeline templates live under:
-
-- [templates/integrations/claude/README.md](templates/integrations/claude/README.md)
-- [templates/integrations/codex/README.md](templates/integrations/codex/README.md)
-
-## Files
-
-```text
-kanban/
-├── kanban.html                          # The entire UI — single file, no dependencies
-├── kanban-spec.md                       # Full spec and design document
-├── serve.js                             # Node.js HTTP server (port 5555)
-├── CHANGELOG.md                         # Schema changes and migration instructions
-├── README.md                            # This file
-└── templates/
-    ├── kanban.json.template             # Empty board template for new repos
-    ├── kanban-pipeline.json.template    # Board template with Code Review column
-    ├── SKILL.md                         # Legacy Claude bootstrap template (compatibility path)
-    ├── pipeline/                        # Legacy Claude pipeline templates (compatibility path)
-    └── integrations/
-        ├── claude/                      # Claude Code setup
-        └── codex/                       # Codex setup
-```
-
-## Using as a Git Submodule
-
-The board is designed to be shared across repositories. The submodule contains the UI, server, and spec. Each repo tracks its own board data.
-
-**Key detail:** Git doesn't allow parent repos to track files inside submodules. So the board data file (`kanban-board.json`) lives at the **repo root**, not inside `kanban/`. The server auto-detects this layout.
-
-```text
-your-repo/
-├── kanban/                  # ← git submodule (shared code)
-│   ├── kanban.html
-│   ├── serve.js
-│   └── ...
-├── kanban-board.json        # ← your board data (tracked in parent repo)
-└── ...
-```
-
-### Adding to a New Repo
+To pull the latest versions:
 
 ```bash
-# 1. Add the submodule
-git submodule add https://github.com/tpearsallmd/kanban-claude-code.git kanban
+# Claude
+cd ~/.claude/skills/kanban && git pull
 
-# 2. Create your board from the template
-cp kanban/templates/kanban.json.template kanban-board.json
-# Edit kanban-board.json to set your repo name
-
-# 3. Install the integration that matches your agent
-# Claude Code: see templates/integrations/claude/README.md
-# Codex: see templates/integrations/codex/README.md
-
-# 4. Start the server
-node kanban/serve.js
-# → Data file: /path/to/your-repo/kanban-board.json
+# Codex
+cd ~/.codex/skills/kanban && git pull
 ```
-
-### Pulling Updates
-
-```bash
-cd kanban && git pull origin main && cd ..
-git add kanban
-git commit -m "Update kanban submodule"
-```
-
-If the update includes a schema change, check `CHANGELOG.md` for the migration instructions.
-
-### Standalone Usage
-
-If you do not need submodule sharing:
-
-```bash
-git clone https://github.com/tpearsallmd/kanban-claude-code.git kanban
-cp kanban/templates/kanban.json.template kanban/kanban.json
-node kanban/serve.js
-```
-
-In standalone mode, `serve.js` finds `kanban.json` in its own directory.
-
-## Schema
-
-See [kanban-spec.md](kanban-spec.md) for the full JSON schema, field definitions, column entry policies, and WIP limit configuration.
-
-## Compatibility Notes
-
-- The root `templates/SKILL.md` and `templates/pipeline/` files remain as compatibility aliases for existing Claude setups.
-- New installs should prefer `templates/integrations/claude/` or `templates/integrations/codex/`.
 
 ## License
 
