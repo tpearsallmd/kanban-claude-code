@@ -480,6 +480,9 @@ body {
 
 <div id="toolbar">
   <span id="repo-title" style="font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:0.02em"></span>
+  <select id="project-filter" style="padding:6px 10px;border:1px solid #475569;background:#334155;color:#e2e8f0;border-radius:6px;font-size:13px;cursor:pointer;margin-left:10px;">
+    <option value="">All Projects</option>
+  </select>
   <span class="spacer"></span>
   <button id="btn-add">+ Add Card</button>
   <span id="save-status" style="font-size:12px;color:#64748b"></span>
@@ -616,6 +619,7 @@ let state = null;
 let editingCardId = null;
 let dragCardId = null;
 let contextCardId = null;
+let projectFilter = null;  // null = show all projects
 const DONE_VISIBLE_LIMIT = 25;
 
 function getCardTimestamp(card, ...fields) {
@@ -654,8 +658,15 @@ function syncDoneCardMetadata() {
 
 function getVisibleColumnCards(column) {
   if (!state) return [];
-  if (column !== 'Done') return state.cards.filter(card => card.column === column);
-  return sortDoneCards(state.cards.filter(card => card.column === 'Done' && !card.archived));
+  let cards = state.cards.filter(card => card.column === column);
+
+  // Apply project filter if set
+  if (projectFilter) {
+    cards = cards.filter(card => card.project === projectFilter);
+  }
+
+  if (column !== 'Done') return cards;
+  return sortDoneCards(cards.filter(card => !card.archived));
 }
 
 function getDoneStats() {
@@ -680,6 +691,21 @@ async function init() {
 
   document.title = state.repo || 'Kanban';
   document.getElementById('repo-title').textContent = state.repo || '';
+
+  // Populate project filter dropdown
+  const projects = [...new Set(state.cards.map(c => c.project).filter(Boolean))].sort();
+  const filterSelect = document.getElementById('project-filter');
+  projects.forEach(project => {
+    const option = document.createElement('option');
+    option.value = project;
+    option.textContent = project;
+    filterSelect.appendChild(option);
+  });
+  filterSelect.addEventListener('change', (e) => {
+    projectFilter = e.target.value || null;
+    render();
+  });
+
   render();
 
   // Poll for external changes (e.g. an external agent editing the JSON) every 3 seconds
