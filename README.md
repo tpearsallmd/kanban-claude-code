@@ -37,15 +37,19 @@ From your home directory, install skills for Claude and Codex:
 # Clone the repo
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
 
-# Claude — extract Claude-specific integration files
-mkdir -p ~/.claude/skills/kanban
-mv /tmp/kanban-setup/skills/integrations/claude/* ~/.claude/skills/kanban
+# Claude — extract each skill to its own top-level directory
+for skill in kanban build review test pipeline commit; do
+  mkdir -p ~/.claude/skills/$skill
+  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
+done
 rm -rf /tmp/kanban-setup
 
-# Codex — extract Codex-specific integration files
+# Codex — same process for Codex-specific skills
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
-mkdir -p ~/.codex/skills/kanban
-mv /tmp/kanban-setup/skills/integrations/codex/* ~/.codex/skills/kanban
+for skill in kanban build review test pipeline commit; do
+  mkdir -p ~/.codex/skills/$skill
+  mv /tmp/kanban-setup/skills/integrations/codex/$skill/* ~/.codex/skills/$skill/
+done
 rm -rf /tmp/kanban-setup
 
 # Set kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
@@ -56,6 +60,7 @@ source ~/.bashrc
 Replace `homelab-01:5555` with your actual service hostname and port.
 
 For setup details, see:
+
 - [skills/integrations/claude/README.md](skills/integrations/claude/README.md)
 - [skills/integrations/codex/README.md](skills/integrations/codex/README.md)
 
@@ -75,12 +80,12 @@ For setup details, see:
 
 ## Workflow
 
-```
+```text
 Backlog → Ready → In Progress → Testing → Review → Done
 ```
 
 | Column | Owner | Purpose |
-|--------|-------|---------|
+| --- | --- | --- |
 | **Backlog** | Human | All ideas, bugs, enhancements — unsorted |
 | **Ready** | Human/Agent | Groomed, prioritized, actionable |
 | **In Progress** | Agent | Actively writing code |
@@ -133,6 +138,7 @@ See [skills/integrations/KANBAN_AGENT_RULES.md](skills/integrations/KANBAN_AGENT
 ```
 
 Optional sections (include only when populated):
+
 - **requirements** — acceptance criteria, constraints, edge cases
 - **design** — approach, affected files, architecture
 - **implementationNotes** — what changed, decisions (build phase)

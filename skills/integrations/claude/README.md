@@ -10,9 +10,12 @@ From your home directory:
 # Clone the repo to a temporary location
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
 
-# Extract Claude-specific integration files to your skills directory
-mkdir -p ~/.claude/skills/kanban
-mv /tmp/kanban-setup/skills/integrations/claude/* ~/.claude/skills/kanban
+# Extract each skill to its own top-level directory
+for skill in kanban build review test pipeline commit; do
+  mkdir -p ~/.claude/skills/$skill
+  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
+done
+
 rm -rf /tmp/kanban-setup
 
 # Set the kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
@@ -20,10 +23,17 @@ echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-This installs the skills to `~/.claude/skills/kanban/` with the expected structure:
+This installs each skill as a top-level directory:
 
-- `kanban/` — kanban board integration
-- `build/`, `review/`, `test/`, `pipeline/`, `commit/` — individual skills
+```text
+~/.claude/skills/
+├── kanban/       # /kanban — read and display the board
+├── build/        # /build — work on Ready cards
+├── test/         # /test — work on Testing cards
+├── review/       # /review — work on Review cards
+├── pipeline/     # /pipeline — orchestrate multiple sessions
+└── commit/       # /commit — smart git commit with semver bumping
+```
 
 Replace `homelab-01:5555` with your actual kanban service hostname and port. Defaults to `localhost:5555` if not set.
 
@@ -41,10 +51,15 @@ Replace `homelab-01:5555` with your actual kanban service hostname and port. Def
 To pull the latest versions:
 
 ```bash
-# Re-run the setup steps above, or manually:
+# Re-run the setup steps above, or manually update each skill:
 git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
-rm -rf ~/.claude/skills/kanban
-mv /tmp/kanban-setup/skills/integrations ~/.claude/skills/kanban
+
+for skill in kanban build review test pipeline commit; do
+  rm -rf ~/.claude/skills/$skill
+  mkdir -p ~/.claude/skills/$skill
+  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
+done
+
 rm -rf /tmp/kanban-setup
 ```
 
