@@ -210,14 +210,27 @@ Completed cards stay in the same board JSON for traceability:
 
 ## Update Skills
 
-To pull the latest versions:
+To pull the latest versions, run the update script from the repo:
+
+```bash
+bash skills/update.sh           # update both Claude and Codex
+bash skills/update.sh claude    # update Claude only
+bash skills/update.sh codex     # update Codex only
+```
+
+Or manually:
 
 ```bash
 # Claude
-cd ~/.claude/skills/kanban && git pull
+git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
+for skill in kanban build review test pipeline commit; do
+  rm -rf ~/.claude/skills/$skill
+  mkdir -p ~/.claude/skills/$skill
+  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
+done
+rm -rf /tmp/kanban-setup
 
-# Codex
-cd ~/.codex/skills/kanban && git pull
+# Codex (same process, use ~/.codex/skills instead)
 ```
 
 ## License
