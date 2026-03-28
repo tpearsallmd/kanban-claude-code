@@ -63,6 +63,7 @@ Include whichever categories apply:
 - API or endpoint checks
 - Security checks
 - Manual or exploratory checks
+- Terraform plan (when `*.tf` files are in the diff)
 
 For each step, record:
 - What to run
@@ -80,6 +81,16 @@ Run the test plan and record each step in `testResults`:
 ```
 
 Run unit tests first, then broader integration or API checks, then security and exploratory steps.
+
+**Terraform plan (when `*.tf` files are in the diff):**
+
+1. Run `terraform init` in each changed Terraform directory (if init fails due to missing credentials, skip with reason)
+2. Run `terraform plan -detailed-exitcode`:
+   - Exit 0 = no changes (pass)
+   - Exit 2 = changes detected (pass — record plan summary)
+   - Exit 1 = error (fail)
+3. Flag any unexpected resource destruction or replacement in notes
+4. If credentials are unavailable, skip with reason — do not count as a failure
 
 ### 4. Apply The Gate
 

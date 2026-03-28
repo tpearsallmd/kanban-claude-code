@@ -52,6 +52,11 @@ Check:
 - Code quality
 - Security
 - Test coverage
+- Terraform (only when `*.tf` files are in the diff):
+  - Run `terraform fmt -check` in each changed Terraform directory
+  - Run `terraform validate` in each changed Terraform directory (run `terraform init -backend=false` first if `.terraform` is missing)
+  - Check for hardcoded secrets, missing variable descriptions, or resources without tags/naming conventions
+  - These are static checks only — `terraform plan` is the test session's responsibility
 
 If tests exist for changed logic, run the relevant test command. A failing test run is an automatic fail.
 

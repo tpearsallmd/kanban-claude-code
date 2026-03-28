@@ -88,8 +88,20 @@ Build your plan by considering these categories — include every category that 
 | **API / endpoint** | API route or controller changes | Live dev environment |
 | **Security** | Change touches auth, input handling, permissions, or encryption | Either |
 | **Manual / exploratory** | UI, config, or anything not covered by automated suites | Live dev environment |
+| **Terraform plan** | `*.tf` files appear in the diff | In-process (requires AWS/cloud credentials) |
 
 Any category marked "Live dev environment" requires the dev environment to be running (see above). If it is unavailable and cannot be started, mark those steps as `skip` with reason `"Dev environment unavailable"` — but still run unit tests.
+
+**Terraform plan steps (when `*.tf` files are in the diff):**
+
+1. Identify each Terraform directory containing changed `.tf` files
+2. Run `terraform init` (with the real backend) in each directory — if init fails due to missing credentials or backend config, record the step as `skip` with reason
+3. Run `terraform plan -detailed-exitcode` in each directory:
+   - Exit code 0 = no changes (pass — note this in results)
+   - Exit code 2 = changes detected (pass — record the plan summary in `testResults.notes`)
+   - Exit code 1 = error (fail — record the error output)
+4. Review the plan output for unexpected resource destruction or replacement — flag these in `testResults.notes` even if the plan itself succeeds
+5. If credentials are unavailable, record the step as `skip` with reason `"Cloud credentials unavailable"` — do not count as a failure
 
 If `implementationNotes` is missing or too vague to derive a meaningful test plan — do not claim the card. See [Missing implementationNotes](#missing-implementationnotes).
 

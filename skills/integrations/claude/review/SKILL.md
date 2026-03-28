@@ -75,6 +75,12 @@ Evaluate each category against the diff and card requirements:
 
 A test suite that fails is an automatic fail regardless of other checklist results.
 
+**Terraform (only when `*.tf` files are in the diff)**
+- Run `terraform fmt -check` in each Terraform directory that has changes — any formatting drift is a fail
+- Run `terraform validate` in each changed Terraform directory (run `terraform init -backend=false` first if `.terraform` is missing) — any validation error is a fail
+- Check for hardcoded secrets, missing variable descriptions, or resources without tags/naming conventions
+- These are static checks only — `terraform plan` is the test session's responsibility
+
 ### Step 3 — Record findings and move the card
 
 **If all checklist categories pass:**
