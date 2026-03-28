@@ -155,6 +155,10 @@ Role-owned optional fields:
 
 ## Board Rules
 
+- **Never read or write `kanban-board.json` directly** — always use HTTP endpoints.
+- **Always use granular endpoints** — `POST /cards`, `PATCH /cards/:id`, `DELETE /cards/:id`. Never use PUT to overwrite the full board.
+- Move a card: `PATCH /cards/:id` with `column` and `updated` (plus any required fields for that gate).
+- Add a card: `POST /cards` with the full card object — id format `card_{timestamp}_{random3}`.
 - Never change `id` or `created`.
 - Never claim blocked cards.
 - The UI shows the 25 most recently completed cards in `Done`; older completed cards remain in the same JSON file with `archived: true`.

@@ -185,9 +185,10 @@ A general instruction to do work does NOT imply approval. Explicit sign-off only
 ## Board Rules
 
 - The kanban service runs as a standalone Docker container at `http://${KANBAN_HOST:-localhost}:5555`
-- **Never read or write `kanban-board.json` directly** — always use HTTP (`GET` and `PUT /kanban.json`)
-- Move a card: read the board, update `column` and `updated` only (plus any required fields for that gate), write back via HTTP
-- Add a card: read the board, append to `cards` array — id format `card_{timestamp}_{random3}`, write back via HTTP
+- **Never read or write `kanban-board.json` directly** — always use HTTP endpoints
+- **Always use granular endpoints** — `POST /cards`, `PATCH /cards/:id`, `DELETE /cards/:id`. Never use PUT to overwrite the full board.
+- Move a card: `PATCH /cards/:id` with `column` and `updated` (plus any required fields for that gate)
+- Add a card: `POST /cards` with the full card object — id format `card_{timestamp}_{random3}`
 - Never modify: `created`, `id`
 - Blocked cards: never claim. Report to user and skip.
 - Always pretty-print JSON with 2-space indentation

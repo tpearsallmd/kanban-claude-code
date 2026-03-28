@@ -16,6 +16,20 @@ Before any operation, ensure:
    export KANBAN_HOST=homelab-01:5555
    ```
 
+## API Endpoints
+
+All endpoints use `http://${KANBAN_HOST:-localhost:5555}` as the base URL.
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/health` | Health check |
+| GET | `/kanban.json` | Read entire board |
+| GET | `/kanban.json?column=Ready` | Read board filtered to one column |
+| GET | `/cards/:id` | Read a single card |
+| POST | `/cards` | Add a new card |
+| PATCH | `/cards/:id` | Update specific fields on a card |
+| DELETE | `/cards/:id` | Remove a card |
+
 ## Card Management
 
 ### Health check
@@ -39,25 +53,22 @@ curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Backlog
 
 Parse the JSON response. Cards are in a flat `cards` array — filter by `card.column` as needed.
 
+### Read a single card
+
+```bash
+curl -sf http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k
+```
+
+Returns the card object directly (not wrapped in a board).
+
 ### Add a card
 
-1. Read the current board:
-   ```bash
-   curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
-   ```
-2. Generate a unique id: `card_{unix_timestamp}_{3_random_alphanumeric_chars}` (e.g., `card_1741234567_f7k`)
-3. Append a new card object to the `cards` array with all required fields
-4. Write back:
-   ```bash
-   curl -sf -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
-     -H "Content-Type: application/json" \
-     -d '<full board JSON>'
-   ```
+Generate a unique id: `card_{unix_timestamp}_{3_random_alphanumeric_chars}` (e.g., `card_1741234567_f7k`)
 
-**Complete card example with all required fields:**
-
-```json
-{
+```bash
+curl -sf -X POST http://${KANBAN_HOST:-localhost:5555}/cards \
+  -H "Content-Type: application/json" \
+  -d '{
   "id": "card_1741234567_f7k",
   "title": "Add rate limiting to API endpoints",
   "description": "Implement per-user rate limiting on all public API routes. Should return 429 with Retry-After header when exceeded.",
@@ -71,8 +82,10 @@ Parse the JSON response. Cards are in a flat `cards` array — filter by `card.c
   "tags": ["backend", "security"],
   "blocked": false,
   "blockedReason": ""
-}
+}'
 ```
+
+Returns the created card on success (HTTP 201). Returns HTTP 409 if the id already exists.
 
 **Required fields:** `id`, `title`, `description`, `type`, `priority`, `size`, `column`, `project`, `created`, `updated`, `blocked`
 
@@ -94,16 +107,25 @@ Parse the JSON response. Cards are in a flat `cards` array — filter by `card.c
 
 ### Edit a card
 
-1. Read the current board
-2. Find the card by `id` in the `cards` array
-3. Update the desired fields, always update `updated` to the current timestamp
-4. Write the full board back via PUT
+Send only the fields you want to change. The server merges them into the existing card. `id` and `created` are protected and cannot be changed.
 
-**Never modify:** `id`, `created`
+```bash
+curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k \
+  -H "Content-Type: application/json" \
+  -d '{"priority": "medium", "updated": "2026-03-27T12:00:00Z"}'
+```
+
+Returns the full updated card on success.
 
 ### Move a card
 
-Same as edit — update `column` and `updated`, then PUT the full board back.
+Same as edit — PATCH with the new column and updated timestamp:
+
+```bash
+curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k \
+  -H "Content-Type: application/json" \
+  -d '{"column": "In Progress", "updated": "2026-03-27T12:00:00Z"}'
+```
 
 Check `wipLimits` before moving. If the target column would exceed its limit, flag it to the user rather than silently exceeding it.
 
@@ -112,23 +134,31 @@ Check `wipLimits` before moving. If the target column would exceed its limit, fl
 Use blocking to express dependencies between cards — card A must be completed before card B can proceed.
 
 **To block a card:**
-1. Set `blocked: true` on the dependent card
-2. Set `blockedReason` to reference the blocker, e.g., `"Blocked by card_1741234567_f7k — need rate limiting before adding public endpoints"`
-3. Update `updated`
+
+```bash
+curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/card_DEPENDENT_ID \
+  -H "Content-Type: application/json" \
+  -d '{"blocked": true, "blockedReason": "Blocked by card_1741234567_f7k — need rate limiting before adding public endpoints", "updated": "2026-03-27T12:00:00Z"}'
+```
 
 **When a blocker is completed:**
 1. Read the board and find all cards where `blockedReason` references the completed card's id or title
-2. For each blocked card: set `blocked: false`, clear `blockedReason` to `""`
-3. Update `updated` on each unblocked card
-4. Write the board back
+2. PATCH each blocked card to unblock it:
+   ```bash
+   curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/card_BLOCKED_ID \
+     -H "Content-Type: application/json" \
+     -d '{"blocked": false, "blockedReason": "", "updated": "2026-03-27T12:00:00Z"}'
+   ```
 
 Agents should never claim a blocked card. Report it to the user and skip it.
 
 ### Delete a card
 
-1. Read the current board
-2. Remove the card object from the `cards` array by `id`
-3. Write the full board back via PUT
+```bash
+curl -sf -X DELETE http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k
+```
+
+Returns the deleted card on success.
 
 ---
 

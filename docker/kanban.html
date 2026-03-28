@@ -754,7 +754,7 @@ async function saveFile() {
 
     const resp = await fetch('./kanban.json', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Source': 'ui' },
       body: JSON.stringify(state, null, 2)
     });
     if (!resp.ok) throw new Error(resp.statusText);

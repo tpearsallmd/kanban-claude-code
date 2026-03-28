@@ -20,11 +20,24 @@ curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Ready
 curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Code%20Review
 curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json?column=Testing
 
-# Update the board (read, modify, write back with 2-space indent)
-curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
+# Read a single card
+curl -sf http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k
+
+# Add a new card (POST sends only the card, not the full board)
+curl -sf -X POST http://${KANBAN_HOST:-localhost:5555}/cards \
   -H "Content-Type: application/json" \
-  -d "$(jq --indent 2 . updated_board.json)"
+  -d '{"id": "card_...", "title": "...", "column": "Backlog", ...}'
+
+# Update specific fields on a card (PATCH sends only changed fields)
+curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k \
+  -H "Content-Type: application/json" \
+  -d '{"column": "In Progress", "updated": "2026-03-27T12:00:00Z"}'
+
+# Delete a card
+curl -sf -X DELETE http://${KANBAN_HOST:-localhost:5555}/cards/card_1741234567_f7k
 ```
+
+**Always use the granular endpoints** (POST, PATCH, DELETE) — they send only the card or changed fields, avoiding board corruption. Never use PUT to overwrite the full board.
 
 ---
 
@@ -96,17 +109,26 @@ Include only when they have content:
 3. Parse as JSON and filter by column or project as needed
 
 ### Moving Cards
-1. Read current board
-2. Find the card by `id`
-3. Update `column` and `updated` fields only
-4. Write back via HTTP PUT
+
+PATCH the card with the new column and updated timestamp:
+
+```bash
+curl -sf -X PATCH http://${KANBAN_HOST:-localhost:5555}/cards/<card_id> \
+  -H "Content-Type: application/json" \
+  -d '{"column": "In Progress", "updated": "2026-03-27T12:00:00Z"}'
+```
 
 ### Creating Cards
-1. Read current board
-2. Generate unique `id`: `card_{timestamp}_{random3}`
-3. Add new object to `cards` array with required fields
-4. Set `column` to `Backlog` (new cards start here)
-5. Write back via HTTP PUT
+
+POST a new card object — the server appends it to the board:
+
+```bash
+curl -sf -X POST http://${KANBAN_HOST:-localhost:5555}/cards \
+  -H "Content-Type: application/json" \
+  -d '{"id": "card_{timestamp}_{random3}", "title": "...", "column": "Backlog", ...}'
+```
+
+Set `column` to `Backlog` (new cards start here). See the Quick Start or kanban SKILL.md for the full card schema.
 
 ### Card Lifecycle
 - **Before moving to In Progress**: confirm description is actionable; ask user for clarification if needed
@@ -144,7 +166,7 @@ Check before moving a card to a limited column. If the move would exceed the lim
 
 ## Concurrency
 
-The service serializes writes via a promise queue. Concurrent PUTs are safe — the second write waits for the first to complete, then processes. No data loss or race conditions.
+The service serializes writes via a promise queue. Concurrent requests are safe — the second write waits for the first to complete, then processes. No data loss or race conditions.
 
 ---
 
