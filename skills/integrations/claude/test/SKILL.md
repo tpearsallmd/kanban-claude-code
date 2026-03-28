@@ -74,7 +74,9 @@ git diff main..HEAD -- <files mentioned in implementationNotes>
 
 ### Step 2 — Derive the test plan independently
 
-Write `testPlan` on the card. Requirements:
+**IMPORTANT: `testPlan`, `testResults`, and `reviewNotes` are three separate card fields. You MUST write each one individually via PATCH. Do NOT combine them into a single field.**
+
+Write `testPlan` on the card via PATCH **before executing any tests**. Requirements:
 - Derived from card requirements and the actual code diff — not copied from developer notes
 - If `testFailureLog` has entries, ensure prior failure cases are explicitly covered
 - For each step: what to run, what to look for, what constitutes pass vs. fail
@@ -107,10 +109,15 @@ If `implementationNotes` is missing or too vague to derive a meaningful test pla
 
 ### Step 3 — Execute
 
-Work through each `testPlan` step. Record each result in `testResults`:
+Work through each `testPlan` step. Record each result in the `testResults` card field (an array — **not** inside `reviewNotes`):
 ```json
-{ "step": "label", "result": "pass|fail|skip", "notes": "actual output or reason for skip" }
+[
+  { "step": "Unit tests", "result": "pass", "notes": "26/26 pass" },
+  { "step": "API endpoint validation", "result": "fail", "notes": "POST /api/foo returns 500 — missing env var" }
+]
 ```
+
+Write `testResults` to the card via PATCH after completing all steps — this is a separate field from `testPlan` and `reviewNotes`.
 
 - `skip` requires a justification in `notes` — "not applicable because X" is fine, but a silent skip hides coverage gaps
 
