@@ -547,22 +547,6 @@ body {
         <textarea id="f-testResults" placeholder='[{"step": "...", "result": "pass|fail|skip", "notes": "..."}]'></textarea>
       </div>
 
-      <button type="button" class="section-toggle" data-section="testFailureLog">
-        <span class="arrow">▶</span> Test Failure Log
-        <span class="section-indicator" id="ind-testFailureLog"></span>
-      </button>
-      <div class="section-body" id="sec-testFailureLog">
-        <textarea id="f-testFailureLog" placeholder='[{"date": "...", "failedSteps": [...], "errorSummary": "...", "hypothesis": "..."}]'></textarea>
-      </div>
-
-      <button type="button" class="section-toggle" data-section="testFailureCount">
-        <span class="arrow">▶</span> Test Failure Count
-        <span class="section-indicator" id="ind-testFailureCount"></span>
-      </button>
-      <div class="section-body" id="sec-testFailureCount">
-        <textarea id="f-testFailureCount" placeholder="0"></textarea>
-      </div>
-
       <button type="button" class="section-toggle" data-section="reviewNotes">
         <span class="arrow">▶</span> Review Notes
         <span class="section-indicator" id="ind-reviewNotes"></span>
@@ -1043,7 +1027,7 @@ document.getElementById('f-blocked').onchange = e => {
 };
 
 // Section toggles
-const SECTIONS = ['requirements', 'design', 'implementationNotes', 'testPlan', 'testResults', 'testFailureLog', 'testFailureCount', 'reviewNotes', 'reviewFeedback'];
+const SECTIONS = ['requirements', 'design', 'implementationNotes', 'testPlan', 'testResults', 'reviewNotes', 'reviewFeedback'];
 document.querySelectorAll('.section-toggle').forEach(btn => {
   btn.onclick = () => {
     const sec = btn.dataset.section;
