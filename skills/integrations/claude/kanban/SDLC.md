@@ -11,10 +11,10 @@ This is the canonical rulebook for all role sessions (build, test, review). Ever
 Every role session runs these steps on start, before doing anything role-specific:
 
 1. **Verify kanban service is running**:
-   - Check: `curl -sf http://${KANBAN_HOST:-localhost}:5555/health`
+   - Check: `curl -sf http://${KANBAN_HOST:-localhost:5555}/health`
    - If it fails, you cannot proceed — the service must be running before this session starts
 2. **Read the board**:
-   - `curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json`
+   - `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json`
 3. **Filter to your role's column** — each role only works cards in its designated column (see role skills)
 4. **Present available cards** to the user — do not begin any work, do not claim any card
 5. **Wait for the user to confirm** which card to pick up before proceeding
@@ -184,7 +184,7 @@ A general instruction to do work does NOT imply approval. Explicit sign-off only
 
 ## Board Rules
 
-- The kanban service runs as a standalone Docker container at `http://${KANBAN_HOST:-localhost}:5555`
+- The kanban service runs as a standalone Docker container at `http://${KANBAN_HOST:-localhost:5555}`
 - **Never read or write `kanban-board.json` directly** — always use HTTP endpoints
 - **Always use granular endpoints** — `POST /cards`, `PATCH /cards/:id`, `DELETE /cards/:id`. Never use PUT to overwrite the full board.
 - Move a card: `PATCH /cards/:id` with `column` and `updated` (plus any required fields for that gate)

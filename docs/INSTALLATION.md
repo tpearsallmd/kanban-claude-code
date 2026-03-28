@@ -149,19 +149,19 @@ All board access goes through HTTP. Agents and skills use these endpoints:
 
 ### Health Check
 ```bash
-GET http://${KANBAN_HOST:-localhost}:5555/health
+GET http://${KANBAN_HOST:-localhost:5555}/health
 ```
 Returns `200 ok` if the service is running.
 
 ### Read the board
 ```bash
-curl http://${KANBAN_HOST:-localhost}:5555/kanban.json
+curl http://${KANBAN_HOST:-localhost:5555}/kanban.json
 ```
 Returns the full board as JSON.
 
 ### Update the board
 ```bash
-curl -X PUT http://${KANBAN_HOST:-localhost}:5555/kanban.json \
+curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
   -H "Content-Type: application/json" \
   -d '<board-json>'
 ```
@@ -226,13 +226,13 @@ If you're integrating a new agent or custom skill, use these endpoints:
 
 ```bash
 # Verify service is running
-curl -sf http://${KANBAN_HOST:-localhost}:5555/health
+curl -sf http://${KANBAN_HOST:-localhost:5555}/health
 
 # Read the board
-curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
 
 # Update the board (pretty-print with 2-space indentation)
-curl -s -X PUT http://${KANBAN_HOST:-localhost}:5555/kanban.json \
+curl -s -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json \
   -H "Content-Type: application/json" \
   -d "$(echo "$board" | jq --indent 2)"
 ```

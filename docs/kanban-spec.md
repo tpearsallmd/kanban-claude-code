@@ -219,8 +219,8 @@ Each integration uses the HTTP API to read and update the board. See [INSTALLATI
 
 ### Session Start Pattern
 ```
-1. Verify kanban service: curl -sf http://${KANBAN_HOST:-localhost}:5555/health
-2. Read board: curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+1. Verify kanban service: curl -sf http://${KANBAN_HOST:-localhost:5555}/health
+2. Read board: curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
 3. Find the highest priority card in the Ready column
 4. Assess if the description has enough detail
    - If yes: move it to In Progress and begin work
@@ -229,9 +229,9 @@ Each integration uses the HTTP API to read and update the board. See [INSTALLATI
 
 ### Session End Pattern
 ```
-1. Read current board: curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json
+1. Read current board: curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json
 2. Update the card: move to next column, populate structured sections
-3. Write back: curl -X PUT http://${KANBAN_HOST:-localhost}:5555/kanban.json -d '...'
+3. Write back: curl -X PUT http://${KANBAN_HOST:-localhost:5555}/kanban.json -d '...'
 4. Add any new tasks discovered during this session to the Backlog
 ```
 

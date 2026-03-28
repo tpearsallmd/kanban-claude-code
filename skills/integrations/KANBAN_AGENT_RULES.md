@@ -104,8 +104,8 @@ Include only when they have content:
 ## Rules for Agents
 
 ### Reading the Board
-1. Health check first: `curl -sf http://${KANBAN_HOST:-localhost}:5555/health`
-2. Read: `curl -sf http://${KANBAN_HOST:-localhost}:5555/kanban.json`
+1. Health check first: `curl -sf http://${KANBAN_HOST:-localhost:5555}/health`
+2. Read: `curl -sf http://${KANBAN_HOST:-localhost:5555}/kanban.json`
 3. Parse as JSON and filter by column or project as needed
 
 ### Moving Cards
