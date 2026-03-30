@@ -1,2 +1,3 @@
-# Each consuming repo tracks its own board data
-kanban.json
+# OS
+.DS_Store
+Thumbs.db

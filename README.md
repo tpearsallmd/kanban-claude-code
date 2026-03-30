@@ -1,237 +1,126 @@
-# Kanban for Coding Agents
+# Kanban SDLC Skills for Coding Agents
 
-A unified kanban board for human-agent collaboration across multiple projects. Runs as a standalone Docker service with HTTP API access. Agents read and update the board via HTTP; humans use the browser UI for planning.
+A structured SDLC workflow for human-agent collaboration, powered by Jira. Agents follow defined gates to build, review, and test work — humans plan and approve.
 
 ## Why
 
-Coding agents work best when they know what to work on, what changed, and what to do next. This board gives them context through a simple JSON API they can read and write. The human uses the browser UI for planning and prioritization; the agent picks up cards, updates progress, and moves them through the workflow.
+Coding agents work best when they know what to work on, what the rules are, and what to do next. These skills give agents a structured workflow with mandatory gates, role separation, and clear ownership of issue fields. The human uses Jira for planning and prioritization; the agent picks up issues and moves them through the workflow.
+
+## Architecture
+
+```text
+Jira Board (source of truth)
+    |
+    v
+Atlassian MCP Server (transport)
+    |
+    v
+Coding Agent (Claude Code, Codex, etc.)
+    |
+    v
+Skills (this repo — workflow rules + gate logic)
+```
+
+No local server, no JSON file storage. The Jira board is the single source of truth. Agents interact with it via the Atlassian MCP server.
 
 ## Quick Start
 
-### 1. Deploy the Docker Service
+### 1. Set up your Jira board
 
-On your server or local machine:
+Create a Kanban board with these statuses:
+
+| Status | Purpose |
+| --- | --- |
+| Backlog | Ideas, not yet ready |
+| Selected for Development | Prioritized, actionable |
+| In Progress | Actively being built |
+| Code Review | Awaiting code review |
+| Testing | Awaiting test verification |
+| Review | Awaiting human approval |
+| Done | Complete |
+
+### 2. Configure the Atlassian MCP server
+
+Follow the [Atlassian MCP server setup](https://www.npmjs.com/package/@anthropic/mcp-atlassian) to connect your agent to Jira.
+
+### 3. Install skills
+
+Download and run the installer script — no need to clone the repo:
+
+**Bash (macOS / Linux / Git Bash on Windows):**
 
 ```bash
-git clone https://github.com/tpearsallmd/kanban-claude-code.git
-cd kanban-claude-code/docker
-docker compose up -d
+curl -fsSL https://raw.githubusercontent.com/tpearsallmd/kanban-claude-code/main/update_kanban_skills.sh -o update_kanban_skills.sh
+bash update_kanban_skills.sh
 ```
 
-Verify it's running:
+**PowerShell (Windows):**
 
-```bash
-curl http://localhost:5555/health
-# Output: ok
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/tpearsallmd/kanban-claude-code/main/update_kanban_skills.ps1" -OutFile "update_kanban_skills.ps1"
+.\update_kanban_skills.ps1
 ```
 
-Open the UI at [http://localhost:5555](http://localhost:5555).
+The script will prompt you for:
 
-See [docs/INSTALLATION.md](docs/INSTALLATION.md) for detailed setup, remote deployment, and troubleshooting.
+- **Agent type** — claude or codex
+- **Install level** — project-level (`.claude/skills/` in your repo) or user-level (`~/.claude/skills/`)
 
-### 2. Install Agent Skills (User Level)
+It clones a temporary copy of the repo, copies the skills, and cleans up after itself.
 
-From your home directory, install skills for Claude and Codex:
+> **Already have the repo cloned or as a submodule?** Run the script from inside it and it will use your local copy instead of cloning.
 
-```bash
-# Clone the repo
-git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
+### 4. Configure SDLC.md
 
-# Claude — extract each skill to its own top-level directory
-for skill in kanban build review test pipeline commit; do
-  mkdir -p ~/.claude/skills/$skill
-  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
-done
-rm -rf /tmp/kanban-setup
+After installing, edit `kanban/SDLC.md` in your skills directory:
 
-# Codex — same process for Codex-specific skills
-git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
-for skill in kanban build review test pipeline commit; do
-  mkdir -p ~/.codex/skills/$skill
-  mv /tmp/kanban-setup/skills/integrations/codex/$skill/* ~/.codex/skills/$skill/
-done
-rm -rf /tmp/kanban-setup
+1. Set your **Cloud ID** — run the `getAccessibleAtlassianResources` MCP tool to find it
+2. Set your **Project Key** — the prefix in your issue keys (e.g., `HI` for `HI-123`)
+3. Fill in the **transition IDs** — run `getTransitionsForJiraIssue` on any issue to get them
 
-# Set kanban service endpoint (add to ~/.bashrc, ~/.zshrc, or ~/.bash_profile)
-echo 'export KANBAN_HOST=homelab-01:5555' >> ~/.bashrc
-source ~/.bashrc
-```
+## Updating Skills
 
-Replace `homelab-01:5555` with your actual service hostname and port.
-
-For setup details, see:
-
-- [skills/integrations/claude/README.md](skills/integrations/claude/README.md)
-- [skills/integrations/codex/README.md](skills/integrations/codex/README.md)
-
-## Features
-
-- **Drag-and-drop** — cards between columns
-- **WIP limits** with visual warnings
-- **Blocked flag** with reason
-- **T-shirt sizing** (XS/S/M/L/XL) and priority (high/medium/low)
-- **Structured sections** — Requirements, Design, Implementation Notes, Test Plan, Review Notes
-- **Project field** — identify which repo a card belongs to
-- **Auto-save** on every action
-- **Dark mode** UI
-- **Completion history** — completed cards stay in the board (25 recent in UI, older ones archived)
-- **HTTP API** — agents read/write via curl, no file I/O
-- **Concurrent write safety** — writes are queued automatically
+Re-run the same installer script. It preserves your SDLC.md configuration (Cloud ID, project key, transition IDs) while updating all skill files.
 
 ## Workflow
 
 ```text
-Backlog → Ready → In Progress → Code Review → Testing → Review → Done
+Backlog -> Selected for Development -> In Progress -> Code Review -> Testing -> Review -> Done
 ```
 
-| Column | Owner | Purpose |
-| --- | --- | --- |
-| **Backlog** | Human | All ideas, bugs, enhancements — unsorted |
-| **Ready** | Human/Agent | Groomed, prioritized, actionable |
-| **In Progress** | Agent | Actively writing code |
-| **Code Review** | Agent | Automated code review (linting, testing, security) |
-| **Testing** | Agent | Write/run tests, verify implementation |
-| **Review** | Human | Human review and approval |
-| **Done** | — | Completed work; recent 25 shown in UI, older cards archived |
+| Gate | From | To | Owner |
+| --- | --- | --- | --- |
+| 1 | Selected for Development | In Progress | Build session |
+| 2 | In Progress | Code Review | Build session |
+| 3 | Code Review | Testing or Selected for Development | Review session |
+| 4 | Testing | Review or Selected for Development | Test session |
+| 5 | Review | Done | Human |
 
-## Agent Integrations
+Each gate has mandatory actions. See [SDLC.md](claude/kanban/SDLC.md) for the complete rulebook.
 
-The board is agent-neutral. Agent-specific skills and SDLC rules live under `skills/integrations/`.
+## Skills
 
-### Claude Code
+| Skill | Purpose |
+| --- | --- |
+| **kanban** | Board bootstrap — read state, summarize, pick up work |
+| **build** | Work issues from Selected for Development through to Code Review |
+| **review** | Independent code review — pass to Testing or return with feedback |
+| **test** | Independent testing — pass to Review or return with failure analysis |
+| **pipeline** | Orchestrate build -> review -> test sequentially |
+| **commit** | Smart git commit with conventional format and optional semver bump |
 
-Setup: [skills/integrations/claude/README.md](skills/integrations/claude/README.md)
+## Key Design Decisions
 
-Skills include: kanban bootstrap, build, code review, test, pipeline orchestration, smart commit.
+- **Role separation** — build, review, and test are independent sessions with strict field ownership. No role can write another role's fields.
+- **Gates are mandatory** — issues cannot skip statuses. Each transition has required actions.
+- **No silent descoping** — if work is dropped from an issue, it must be split into a new issue or explicitly approved.
+- **Test plans are independent** — the test session derives its own plan from the diff, not from developer notes.
+- **Structured comments** — test locking and failure tracking use Jira comments with structured prefixes for append-only semantics.
 
-### Codex
+## Agent-Specific Docs
 
-Setup: [skills/integrations/codex/README.md](skills/integrations/codex/README.md)
-
-Same skills, Codex-specific syntax.
-
-## How Agents Use the Board
-
-1. **Session start**: verify service health, read the board via HTTP
-2. **During work**: update card sections (design, implementation notes, test results, etc.)
-3. **Card transitions**: move through workflow gates (Ready → In Progress → Testing → Review → Done)
-4. **Session end**: move card forward, add discovered tasks to Backlog
-
-See [skills/integrations/KANBAN_AGENT_RULES.md](skills/integrations/KANBAN_AGENT_RULES.md) for the complete API reference and workflow rules.
-
-## Card Schema
-
-```json
-{
-  "id": "card_1741234567_abc",
-  "title": "Short task name",
-  "description": "Longer context and acceptance criteria",
-  "type": "enhancement",
-  "priority": "high",
-  "size": "M",
-  "column": "Ready",
-  "project": "repo-name",
-  "created": "2026-03-12T10:00:00Z",
-  "updated": "2026-03-12T10:00:00Z",
-  "tags": ["backend", "urgent"],
-  "blocked": false
-}
-```
-
-Optional sections (include only when populated):
-
-- **requirements** — acceptance criteria, constraints, edge cases
-- **design** — approach, affected files, architecture
-- **implementationNotes** — what changed, decisions (build phase)
-- **testPlan** — how to test, expected results (test phase)
-- **reviewNotes** — summary for reviewer (review phase)
-
-## Files & Architecture
-
-```text
-├── README.md                     # This file
-├── docker/
-│   ├── Dockerfile                # Docker image definition
-│   ├── docker-compose.yml        # Container orchestration
-│   ├── .env.example              # Environment variable template
-│   ├── serve.js                  # HTTP server (port 5555)
-│   ├── kanban.html               # UI (single file, zero deps)
-│   ├── favicon.svg               # Browser icon
-│   └── kanban-board.json         # Board data (persists in Docker volume)
-├── skills/
-│   └── integrations/
-│       ├── KANBAN_AGENT_RULES.md # Canonical agent API reference
-│       ├── claude/               # Claude Code integration
-│       │   ├── README.md
-│       │   ├── kanban/SDLC.md    # Workflow gates and rules
-│       │   ├── build/SKILL.md
-│       │   ├── review/SKILL.md
-│       │   ├── test/SKILL.md
-│       │   ├── pipeline/SKILL.md
-│       │   └── commit/SKILL.md
-│       └── codex/                # Codex integration (same structure)
-└── docs/
-    ├── INSTALLATION.md           # Setup and deployment guide
-    ├── kanban-spec.md            # Full specification for operators
-    └── CHANGELOG.md              # Release history
-```
-
-## Deployment Models
-
-### Local (Development)
-
-```bash
-cd kanban-claude-code/docker
-docker compose up -d
-export KANBAN_HOST=localhost:5555
-```
-
-### Remote Server
-
-```bash
-# On homelab-01:
-cd kanban-claude-code/docker
-docker compose up -d
-
-# On local machine:
-export KANBAN_HOST=homelab-01:5555
-```
-
-See [docs/INSTALLATION.md](docs/INSTALLATION.md) for full setup instructions, volume management, troubleshooting, and backup procedures.
-
-## Done History
-
-Completed cards stay in the same board JSON for traceability:
-
-- The UI shows the **25 most recently completed** cards in **Done**
-- Older completed cards are marked `archived: true` and hidden from the active board
-- When a card first enters **Done**, the board records `completedAt`
-- Completed history is permanent; older cards are never deleted
-
-## Update Skills
-
-To pull the latest versions, run the update script from the repo:
-
-```bash
-bash skills/update.sh           # update both Claude and Codex
-bash skills/update.sh claude    # update Claude only
-bash skills/update.sh codex     # update Codex only
-```
-
-Or manually:
-
-```bash
-# Claude
-git clone https://github.com/tpearsallmd/kanban-claude-code.git /tmp/kanban-setup
-for skill in kanban build review test pipeline commit; do
-  rm -rf ~/.claude/skills/$skill
-  mkdir -p ~/.claude/skills/$skill
-  mv /tmp/kanban-setup/skills/integrations/claude/$skill/* ~/.claude/skills/$skill/
-done
-rm -rf /tmp/kanban-setup
-
-# Codex (same process, use ~/.codex/skills instead)
-```
+- **[Claude Code](claude/README.md)** — installation details, skill reference, session model
+- **Codex** — coming soon
 
 ## License
 
